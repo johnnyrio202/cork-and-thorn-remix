@@ -1,0 +1,325 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-heading: var(--font-lora), 'Georgia', serif;
+  --font-script: var(--font-pinyon), 'Georgia', serif;
+  --font-sans: var(--font-lora), 'Georgia', serif;
+  --font-mono: var(--font-geist-mono), 'Geist Mono Fallback';
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --color-gold: var(--gold);
+  --color-wine: var(--wine);
+  --color-teal: var(--teal);
+  --color-bone: var(--bone);
+  --color-obsidian: var(--obsidian);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* Cork and Thorn Brand Book: Obsidian + Antique Gold + Wine + Slate Teal + Bone White */
+  --background: #0B111B;
+  --foreground: #F5ECD2;
+  --card: rgba(226, 182, 54, 0.08);
+  --card-foreground: #F5ECD2;
+  --popover: rgba(226, 182, 54, 0.05);
+  --popover-foreground: #F5ECD2;
+  --primary: #E2B636;
+  --primary-foreground: #0B111B;
+  --secondary: rgba(226, 182, 54, 0.12);
+  --secondary-foreground: #F5ECD2;
+  --muted: rgba(95, 125, 107, 0.14);
+  --muted-foreground: #A8A39E;
+  --accent: #E2B636;
+  --accent-foreground: #0B111B;
+  --destructive: #5C0615;
+  --border: rgba(226, 182, 54, 0.2);
+  --input: rgba(226, 182, 54, 0.1);
+  --ring: #E2B636;
+  /* Brand extras */
+  --obsidian: #0B111B;
+  --gold: #E2B636;
+  --wine: #5C0615;
+  --teal: #5F7D6B;
+  --bone: #F5ECD2;
+  --chart-1: oklch(0.68 0.22 5);
+  --chart-2: oklch(0.82 0.16 75);
+  --chart-3: oklch(0.6 0.18 330);
+  --chart-4: oklch(0.55 0.14 260);
+  --chart-5: oklch(0.7 0.1 200);
+  --radius: 0.5rem;
+  --sidebar: oklch(0.18 0.012 300);
+  --sidebar-foreground: oklch(0.97 0.005 90);
+  --sidebar-primary: oklch(0.68 0.22 5);
+  --sidebar-primary-foreground: oklch(0.15 0.01 300);
+  --sidebar-accent: oklch(0.26 0.016 300);
+  --sidebar-accent-foreground: oklch(0.97 0.005 90);
+  --sidebar-border: oklch(0.3 0.016 300);
+  --sidebar-ring: oklch(0.68 0.22 5);
+}
+
+.dark {
+  --background: #0B111B;
+  --foreground: #F5ECD2;
+  --card: rgba(226, 182, 54, 0.08);
+  --card-foreground: #F5ECD2;
+  --popover: rgba(226, 182, 54, 0.05);
+  --popover-foreground: #F5ECD2;
+  --primary: #E2B636;
+  --primary-foreground: #0B111B;
+  --secondary: rgba(226, 182, 54, 0.12);
+  --secondary-foreground: #F5ECD2;
+  --muted: rgba(95, 125, 107, 0.14);
+  --muted-foreground: #A8A39E;
+  --accent: #E2B636;
+  --accent-foreground: #0B111B;
+  --destructive: #5C0615;
+  --border: rgba(226, 182, 54, 0.2);
+  --input: rgba(226, 182, 54, 0.1);
+  --ring: #E2B636;
+  /* Brand extras */
+  --obsidian: #0B111B;
+  --gold: #E2B636;
+  --wine: #5C0615;
+  --teal: #5F7D6B;
+  --bone: #F5ECD2;
+  --chart-1: oklch(0.68 0.22 5);
+  --chart-2: oklch(0.82 0.16 75);
+  --chart-3: oklch(0.6 0.18 330);
+  --chart-4: oklch(0.55 0.14 260);
+  --chart-5: oklch(0.7 0.1 200);
+  --sidebar: oklch(0.18 0.012 300);
+  --sidebar-foreground: oklch(0.97 0.005 90);
+  --sidebar-primary: oklch(0.68 0.22 5);
+  --sidebar-primary-foreground: oklch(0.15 0.01 300);
+  --sidebar-accent: oklch(0.26 0.016 300);
+  --sidebar-accent-foreground: oklch(0.97 0.005 90);
+  --sidebar-border: oklch(0.3 0.016 300);
+  --sidebar-ring: oklch(0.68 0.22 5);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+  }
+  /* NOTE: do NOT set overflow-x on html/body — it breaks position: sticky
+     (used by the kinetic hero). Horizontal overflow is contained on a
+     dedicated wrapper in the layout instead. */
+}
+
+@layer utilities {
+  /* Glassmorphism & Premium Effects */
+  .glass-light {
+    background: rgba(226, 182, 54, 0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 182, 54, 0.15);
+  }
+  
+  .glass-dark {
+    background: rgba(11, 17, 27, 0.6);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(226, 182, 54, 0.1);
+  }
+
+  .glass-champagne {
+    background: rgba(245, 241, 232, 0.05);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 182, 54, 0.2);
+  }
+
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(226, 182, 54, 0) 0%,
+      rgba(226, 182, 54, 0.4) 50%,
+      rgba(226, 182, 54, 0) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 3s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .neon-glow {
+    text-shadow: 0 0 20px rgba(226, 182, 54, 0.6),
+                 0 0 40px rgba(226, 182, 54, 0.3);
+  }
+
+  /* Organic Spacing — mobile-first, scales up at larger breakpoints */
+  .spacing-fluid {
+    padding: 2.5rem 1.25rem;
+  }
+  @media (min-width: 640px) {
+    .spacing-fluid {
+      padding: 3rem 2rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .spacing-fluid {
+      padding: 4rem 3rem;
+    }
+  }
+
+  .spacing-fluid-lg {
+    padding: 3.5rem 1.25rem;
+  }
+  @media (min-width: 640px) {
+    .spacing-fluid-lg {
+      padding: 4.5rem 2rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .spacing-fluid-lg {
+      padding: 6rem 4rem;
+    }
+  }
+
+  .font-heading {
+  font-family: var(--font-heading);
+  }
+  .font-script {
+    font-family: var(--font-script);
+  }
+  .text-glow-primary {
+    text-shadow: 0 0 18px rgb(226 182 54 / 0.55);
+  }
+  .neon-text-primary {
+    color: #E2B636;
+    text-shadow: 0 0 10px rgb(226 182 54 / 0.8),
+      0 0 20px rgb(226 182 54 / 0.5);
+  }
+  .neon-text-secondary {
+    color: #E2B636;
+    text-shadow: 0 0 10px rgb(226 182 54 / 0.8),
+      0 0 20px rgb(226 182 54 / 0.5);
+  }
+  .text-glow-accent {
+    text-shadow: 0 0 18px rgb(226 182 54 / 0.5);
+  }
+  .shadow-glow-primary {
+    box-shadow: 0 0 30px rgb(226 182 54 / 0.35);
+  }
+  .shadow-glow-secondary {
+    box-shadow: 0 0 30px rgb(226 182 54 / 0.35);
+  }
+  .scroll-fade-in {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: scrollFadeIn 0.6s ease-out forwards;
+  }
+  .scroll-scale-in {
+    opacity: 0;
+    transform: scale(0.95);
+    animation: scrollScaleIn 0.6s ease-out forwards;
+  }
+  .scroll-slide-left {
+    opacity: 0;
+    transform: translateX(-30px);
+    animation: scrollSlideLeft 0.6s ease-out forwards;
+  }
+  .scroll-slide-right {
+    opacity: 0;
+    transform: translateX(30px);
+    animation: scrollSlideRight 0.6s ease-out forwards;
+  }
+}
+
+@keyframes scrollFadeIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scrollScaleIn {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes scrollSlideLeft {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scrollSlideRight {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Scroll animation observer helper */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Add stagger delays for multiple elements */
+.scroll-fade-in:nth-child(1) { animation-delay: 0ms; }
+.scroll-fade-in:nth-child(2) { animation-delay: 100ms; }
+.scroll-fade-in:nth-child(3) { animation-delay: 200ms; }
+.scroll-fade-in:nth-child(4) { animation-delay: 300ms; }
+.scroll-fade-in:nth-child(5) { animation-delay: 400ms; }
+
+.scroll-scale-in:nth-child(1) { animation-delay: 0ms; }
+.scroll-scale-in:nth-child(2) { animation-delay: 100ms; }
+.scroll-scale-in:nth-child(3) { animation-delay: 200ms; }
+
+.scroll-slide-left:nth-child(1) { animation-delay: 0ms; }
+.scroll-slide-left:nth-child(2) { animation-delay: 150ms; }
+.scroll-slide-left:nth-child(3) { animation-delay: 300ms; }
+
+.scroll-slide-right:nth-child(1) { animation-delay: 0ms; }
+.scroll-slide-right:nth-child(2) { animation-delay: 150ms; }
+.scroll-slide-right:nth-child(3) { animation-delay: 300ms; }
