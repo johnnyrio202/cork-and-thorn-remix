@@ -8,6 +8,9 @@ import {
   bubblesCategory,
   beerCategory,
   cigarsCategory,
+  hookahSessionAndUpgrades,
+  hookahSignatureBowls,
+  hookahFlavorLibrary,
   type MenuItem,
 } from "@/data/menu";
 import { MenuItemCard } from "@/components/menu-item-card";
@@ -58,13 +61,94 @@ function ItemList({ title, description, items }: { title: string; description?: 
   );
 }
 
+function SubSection({ title, items }: { title: string; items: MenuItem[] }) {
+  return (
+    <div className="mt-8">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-gold">
+        {title}
+      </p>
+      <div>
+        {items.map((item) => (
+          <MenuItemCard key={item.name} item={item} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function HookahSessionAndUpgrades() {
+  return (
+    <div className="mx-auto mt-10 max-w-2xl">
+      <p className="mb-2 text-center text-xs font-semibold uppercase tracking-[0.15em] text-gold">
+        Session & Upgrades
+      </p>
+      <SubSection title="Session" items={hookahSessionAndUpgrades.session} />
+      <SubSection title="Bowl Refills" items={hookahSessionAndUpgrades.bowlRefills} />
+      <SubSection title="Upgrades" items={hookahSessionAndUpgrades.upgrades} />
+      <SubSection title="Premium Products & Add-Ons" items={hookahSessionAndUpgrades.premiumAddOns} />
+    </div>
+  );
+}
+
+function HookahSignatureBowls() {
+  return (
+    <div className="mx-auto mt-10 max-w-2xl">
+      <p className="mb-6 text-center text-xs font-semibold uppercase tracking-[0.15em] text-gold">
+        Signature Bowls · {hookahSignatureBowls.length} items
+      </p>
+      <div>
+        {hookahSignatureBowls.map((item) => (
+          <MenuItemCard key={item.name} item={item} />
+        ))}
+      </div>
+      <p className="mt-6 text-center text-xs text-muted">
+        Curated flavor combinations — select any as your custom mix.
+      </p>
+    </div>
+  );
+}
+
+function HookahFlavorLibrary() {
+  return (
+    <div className="mx-auto mt-10 max-w-2xl">
+      <p className="mb-6 text-center text-xs font-semibold uppercase tracking-[0.15em] text-gold">
+        Flavor Library
+      </p>
+      <div className="space-y-6">
+        {hookahFlavorLibrary.map((lib) => (
+          <div key={lib.brand} className="rounded-xl border border-panel-border bg-panel p-5">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.15em] text-gold-bright">
+              {lib.brand}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {lib.flavors.map((f) => (
+                <span
+                  key={f}
+                  className="rounded-full border border-panel-border px-3 py-1.5 text-xs text-muted"
+                >
+                  {f}
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="mt-6 text-center text-xs text-muted">
+        Reference only — flavors are selected when ordering your bowl, not
+        priced separately.
+      </p>
+    </div>
+  );
+}
+
 export function MenuClient() {
   const [side, setSide] = useState<"sips" | "exhales">("sips");
   const [sipsCategory, setSipsCategory] = useState("cocktails");
   const [cocktailVolume, setCocktailVolume] = useState(cocktailVolumes[0].slug);
   const [spiritSub, setSpiritSub] = useState(spiritCategories[0].slug);
   const [wineSub, setWineSub] = useState(wineCategories[0].slug);
-  const [exhalesCategory, setExhalesCategory] = useState("cigars");
+  const [exhalesCategory, setExhalesCategory] = useState("hookah");
+  const [hookahSub, setHookahSub] = useState("session-upgrades");
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
@@ -199,9 +283,22 @@ export function MenuClient() {
           )}
 
           {exhalesCategory === "hookah" && (
-            <p className="mt-10 text-center text-sm text-muted">
-              Hookah menu coming soon — ask your server for current flavors.
-            </p>
+            <>
+              <div className="mt-4">
+                <PillRow
+                  pills={[
+                    { key: "session-upgrades", label: "Session & Upgrades" },
+                    { key: "signature-bowls", label: "Signature Bowls" },
+                    { key: "flavor-library", label: "Flavor Library" },
+                  ]}
+                  active={hookahSub}
+                  onSelect={setHookahSub}
+                />
+              </div>
+              {hookahSub === "session-upgrades" && <HookahSessionAndUpgrades />}
+              {hookahSub === "signature-bowls" && <HookahSignatureBowls />}
+              {hookahSub === "flavor-library" && <HookahFlavorLibrary />}
+            </>
           )}
         </>
       )}

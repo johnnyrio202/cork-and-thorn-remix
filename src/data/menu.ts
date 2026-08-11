@@ -286,6 +286,69 @@ export const beerCategory: MenuCategory = {
   ],
 };
 
+export const hookahSessionAndUpgrades = {
+  session: [
+    { name: "Weekday Session", detail: "Mon – Thu", price: "$32" },
+    { name: "Weekend Session", detail: "Fri – Sun", price: "$58" },
+  ] as MenuItem[],
+  bowlRefills: [
+    { name: "Weekday Refill", detail: "Mon – Thu", price: "$15" },
+    { name: "Weekend Refill", detail: "Fri & Sat only", price: "$25" },
+  ] as MenuItem[],
+  upgrades: [
+    { name: "Premium Upgrade", detail: "Premium German hookahs", price: "+$15" },
+    { name: "Gold LED Upgrade", detail: "Premium German hookahs with LED lighting", price: "+$30" },
+  ] as MenuItem[],
+  premiumAddOns: [
+    { name: "Hookalit Pro", detail: "Personal e-hookah pen — Blackcurrant Ice / Fcuking Fab / Sweet Passion Fruit / Two Apple", price: "$50" },
+    { name: "3D Tips", detail: "Hello Kitty / Popeye / Bart", price: "$18" },
+    { name: "Ice Tip", detail: "Chill your session", price: "$10" },
+    { name: "Disposable Hose", detail: "Single-use hygiene option", price: "$7" },
+  ] as MenuItem[],
+};
+
+export const hookahSignatureBowls: MenuItem[] = [
+  { name: "Weekend Sunset", detail: "Watermelon, Guava, Mint" },
+  { name: "Tropic Breeze", detail: "Orange, Peach Lit, Mint" },
+  { name: "Mari Bowl", detail: "Blueberry Lit, Peach Lit, Kiwi" },
+  { name: "Big Mo", detail: "White Gummy, Peach Lit, Lime Lit" },
+  { name: "Nelly's Cookies", detail: "Cookies & Crème, Mint" },
+  { name: "Strawberry Lemonade", detail: "Strawberry, Lime Lit, White Gummy" },
+  { name: "Cork & Thorn Special", detail: "Peach Lit, Red Lips, White Gummy" },
+];
+
+export type FlavorLibraryBrand = { brand: string; flavors: string[] };
+
+export const hookahFlavorLibrary: FlavorLibraryBrand[] = [
+  {
+    brand: "Al Fakher Flavors",
+    flavors: [
+      "Orange", "Blueberry", "Peach", "Mint", "Watermelon", "Mango",
+      "Pineapple", "Strawberry", "Kiwi", "Vanilla", "Guava", "Magic Love",
+      "Coconut", "Cherry", "Lemon", "Grapefruit", "Cinnamon", "Hubbly",
+      "Harvest Moon",
+    ],
+  },
+  {
+    brand: "Eternal Flavors",
+    flavors: [
+      "Blue Lit", "Peach Lit", "Lime Lit", "Lemon Lit", "Red Lips",
+      "Orange Lit", "Houdini Secret", "Milk & Cookies",
+    ],
+  },
+  {
+    brand: "Mazaya Flavors",
+    flavors: [
+      "Watermelon w/Mint", "Orange w/Mint", "Love Candy Drop", "Raspberry",
+      "Blueberry", "Mango", "Peach", "Lemon",
+    ],
+  },
+  {
+    brand: "Fumari Flavors",
+    flavors: ["White Gummy", "Red Gummy", "Pink Gummy"],
+  },
+];
+
 export const cigarsCategory: MenuCategory = {
   slug: "cigars",
   title: "Cigars",
