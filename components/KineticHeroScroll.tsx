@@ -248,11 +248,13 @@ export default function KineticHeroScroll() {
   }, [])
 
   return (
-    // 300vh container gives ~200vh of scroll distance for 931 frames
-    // (~1.8px per frame) so scrubbing stays smooth instead of jumping frames.
+    // 220vh container gives ~120vh of scroll distance for 931 frames
+    // (~1.1px per frame) — trimmed from the original 300vh/1.8px to cut the
+    // pre-content scroll distance by ~27% while keeping frame-scrub smooth
+    // enough that a normal scroll doesn't visibly skip frames.
     <div
       ref={containerRef}
-      className="relative w-full bg-[#0B111B] h-[300vh]"
+      className="relative w-full bg-[#0B111B] h-[220vh]"
     >
       <div className="sticky top-0 left-0 h-[100svh] w-full overflow-hidden">
         {/* CSS handles the aspect-ratio crop for vertical mobile screens,
