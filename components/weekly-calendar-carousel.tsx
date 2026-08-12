@@ -130,9 +130,19 @@ export function WeeklyCalendarCarousel({ onTableClick }: WeeklyCalendarCarouselP
   useEffect(() => { setSlotIdx(0) }, [nightIdx])
 
   useEffect(() => {
-    stripRef.current
-      ?.querySelector<HTMLElement>('[data-active="true"]')
-      ?.scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' })
+    // Deliberately not scrollIntoView: with block: 'nearest' it still drags
+    // the whole page vertically to bring this strip into view whenever it's
+    // off-screen at mount (e.g. this section is below the fold on first
+    // load) — the classic footgun where "nearest" isn't actually "don't
+    // scroll the page." Scrolling stripRef's own scrollLeft directly keeps
+    // this strictly horizontal and never touches page scroll.
+    const container = stripRef.current
+    const active = container?.querySelector<HTMLElement>('[data-active="true"]')
+    if (!container || !active) return
+    const containerRect = container.getBoundingClientRect()
+    const activeRect = active.getBoundingClientRect()
+    const offset = activeRect.left - containerRect.left - (containerRect.width - activeRect.width) / 2
+    container.scrollBy({ left: offset, behavior: 'smooth' })
   }, [dayIdx])
 
   return (

@@ -138,12 +138,17 @@ export function ExperiencesLineup({ onRSVPClick, onTableClick }: ExperiencesLine
   useEffect(() => { setNightIdx(0); setSlotIdx(0) }, [dayIdx])
   useEffect(() => { setSlotIdx(0) }, [nightIdx])
 
-  // Keep active calendar pill in view
+  // Keep active calendar pill in view — scrollLeft directly rather than
+  // scrollIntoView, which (even with block: 'nearest') drags the whole page
+  // down vertically to reach this ribbon whenever it's off-screen at mount.
   useEffect(() => {
     const ribbon = ribbonRef.current
-    if (!ribbon) return
-    ribbon.querySelector<HTMLElement>('[data-active="true"]')
-      ?.scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' })
+    const active = ribbon?.querySelector<HTMLElement>('[data-active="true"]')
+    if (!ribbon || !active) return
+    const ribbonRect = ribbon.getBoundingClientRect()
+    const activeRect = active.getBoundingClientRect()
+    const offset = activeRect.left - ribbonRect.left - (ribbonRect.width - activeRect.width) / 2
+    ribbon.scrollBy({ left: offset, behavior: 'smooth' })
   }, [dayIdx])
 
   // Use the event's own image field first; fall back to category map, then generic
