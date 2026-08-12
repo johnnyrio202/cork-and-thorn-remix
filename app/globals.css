@@ -148,8 +148,16 @@
     -webkit-text-size-adjust: 100%;
   }
   /* NOTE: do NOT set overflow-x on html/body — it breaks position: sticky
-     (used by the kinetic hero). Horizontal overflow is contained on a
-     dedicated wrapper in the layout instead. */
+     (used by the kinetic hero), since overflow-x:hidden auto-computes
+     overflow-y:auto per the CSS spec, turning body into its own scroll
+     container and detaching sticky positioning from the real viewport.
+     No dedicated overflow-containing wrapper exists elsewhere in the
+     layout (checked — there isn't one), so there's currently no global
+     horizontal-overflow safety net. Nothing in this codebase was found
+     to actually cause horizontal overflow during audit, but if a future
+     change does, reach for `overflow-x: clip` (not hidden/scroll) on the
+     offending element specifically — clip doesn't establish a new
+     scrolling box, so it doesn't carry the same sticky-breaking risk. */
 }
 
 @layer utilities {

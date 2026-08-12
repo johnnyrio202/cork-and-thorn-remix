@@ -189,11 +189,12 @@ export function ExperiencePortal({ event, onRSVPClick, onTableClick }: Experienc
           </p>
           <h2 className="mb-10 font-sans text-4xl md:text-5xl text-white">The Archive</h2>
 
-          {/* Asymmetric masonry: 3 columns, rows auto-sized at 260px */}
-          <div
-            className="grid grid-cols-3 gap-3"
-            style={{ gridAutoRows: '260px' }}
-          >
+          {/* Asymmetric masonry: 2 columns on mobile (3 fixed-width columns at
+              a 260px row height left thumbnails as narrow, stretched slivers
+              on phones), scaling up to 3 columns with taller rows on larger
+              screens. row-span-1/2 on each image still drives the masonry
+              effect at every size. */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 auto-rows-[140px] sm:auto-rows-[200px] md:auto-rows-[260px] gap-3">
             {ARCHIVE.map((img, i) => (
               <ArchiveImage key={i} {...img} />
             ))}
