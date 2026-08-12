@@ -15,7 +15,11 @@ const EXTENSION = '.jpg'
 // Aggressively preload only the opening frames so the first scroll is instant,
 // then stream the rest on demand. This keeps peak memory + network bounded
 // instead of instantiating all 931 UHD images at once (the old leak).
-const EAGER_PRELOAD = 30
+// Trimmed from 30 -> 10: the eager burst was competing for bandwidth with
+// whatever loads right after the hero (the About section's video, notably),
+// and 10 frames is still more than enough runway before scroll-driven
+// lookahead streaming takes over.
+const EAGER_PRELOAD = 10
 // How many frames ahead of the playhead to warm while scrubbing forward.
 const LOOKAHEAD = 12
 
