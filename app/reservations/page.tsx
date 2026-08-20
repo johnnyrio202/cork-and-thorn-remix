@@ -4,8 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ExperiencesLineup } from '@/components/experiences-lineup'
 import { ReservationForm } from '@/components/reservations/reservation-form'
 import { SpatialBooking, type AvailabilityMap } from '@/components/spatial-booking'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { ReservationDatePicker } from '@/components/reservations/date-picker'
 import type { Booth } from '@/lib/data'
 import { motion } from 'framer-motion'
 
@@ -89,19 +88,8 @@ export default function ExperiencesPage() {
         <p className="mt-3 text-center font-sans text-sm text-white/40 max-w-md mx-auto">
           Pick a date, then choose your table on the floor plan below.
         </p>
-      </div>
-
-      {/* Date picker */}
-      <div className="mx-auto max-w-xs px-4 sm:px-6">
-        <div className="grid gap-2">
-          <Label htmlFor="res-page-date">Date</Label>
-          <Input
-            id="res-page-date"
-            type="date"
-            value={date}
-            onChange={(e) => handleDateChange(e.target.value)}
-            className="bg-card"
-          />
+        <div className="mx-auto mt-6 max-w-xs">
+          <ReservationDatePicker value={date} onChange={handleDateChange} />
         </div>
       </div>
 

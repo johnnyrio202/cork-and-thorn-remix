@@ -182,7 +182,7 @@ export function SpatialBooking({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 40, scale: 0.97 }}
               transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-              className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl border-t border-white/[0.08] bg-[#0e0e0e] p-6 pb-10 md:left-auto md:right-6 md:bottom-6 md:w-80 md:rounded-2xl md:border"
+              className="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl border-t border-white/[0.08] bg-[#0e0e0e] p-6 pb-10 md:inset-0 md:m-auto md:h-fit md:max-h-[85vh] md:w-full md:max-w-sm md:overflow-y-auto md:rounded-2xl md:border md:pb-6"
             >
               <button
                 onClick={() => setDetail(null)}

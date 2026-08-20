@@ -3,8 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { ReservationDatePicker } from '@/components/reservations/date-picker'
 import { SpatialBooking, type AvailabilityMap, type BoothOccupant } from '@/components/spatial-booking'
 import { BOOTHS } from '@/lib/data'
 
@@ -99,16 +98,7 @@ export function StaffDashboard() {
       </div>
 
       <div className="mx-auto mt-6 max-w-xs">
-        <div className="grid gap-2">
-          <Label htmlFor="staff-date">Date</Label>
-          <Input
-            id="staff-date"
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="bg-card"
-          />
-        </div>
+        <ReservationDatePicker value={date} onChange={setDate} disablePastDates={false} />
       </div>
 
       {error && <p className="mx-auto mt-4 max-w-7xl text-sm text-destructive">{error}</p>}
