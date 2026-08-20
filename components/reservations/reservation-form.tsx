@@ -26,6 +26,9 @@ export function ReservationForm({ prefilledDate, formRef }: ReservationFormProps
   const [date, setDate] = useState(prefilledDate ?? '')
   const [time, setTime] = useState('')
   const [guests, setGuests] = useState('4')
+  const [guestName, setGuestName] = useState('')
+  const [guestPhone, setGuestPhone] = useState('')
+  const [guestEmail, setGuestEmail] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [requestConfirmed, setRequestConfirmed] = useState(false)
@@ -61,7 +64,13 @@ export function ReservationForm({ prefilledDate, formRef }: ReservationFormProps
       const res = await fetch('/api/reservations/deposit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tierId, date }),
+        body: JSON.stringify({
+          tierId,
+          date,
+          guestName,
+          guestPhone,
+          guestEmail,
+        }),
       })
       const data = await res.json()
       if (!res.ok || !data.href) {
@@ -237,7 +246,14 @@ export function ReservationForm({ prefilledDate, formRef }: ReservationFormProps
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
                 <Label htmlFor="res-name">Full name</Label>
-                <Input id="res-name" required placeholder="Your name" className="bg-card" />
+                <Input
+                  id="res-name"
+                  required
+                  placeholder="Your name"
+                  className="bg-card"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="res-phone">Phone</Label>
@@ -247,6 +263,8 @@ export function ReservationForm({ prefilledDate, formRef }: ReservationFormProps
                   required
                   placeholder="(725) 000-0000"
                   className="bg-card"
+                  value={guestPhone}
+                  onChange={(e) => setGuestPhone(e.target.value)}
                 />
               </div>
               <div className="grid gap-2 sm:col-span-2">
@@ -257,6 +275,8 @@ export function ReservationForm({ prefilledDate, formRef }: ReservationFormProps
                   required
                   placeholder="you@email.com"
                   className="bg-card"
+                  value={guestEmail}
+                  onChange={(e) => setGuestEmail(e.target.value)}
                 />
               </div>
             </div>
