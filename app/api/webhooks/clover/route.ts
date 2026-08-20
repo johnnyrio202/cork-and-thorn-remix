@@ -33,8 +33,20 @@ export async function POST(request: Request) {
 
   const rawBody = await request.text()
   const signatureHeader = request.headers.get('clover-signature')
+  const sigValid = isSignatureValid(rawBody, signatureHeader, secret)
 
-  if (!isSignatureValid(rawBody, signatureHeader, secret)) {
+  // Temporary diagnostic log — records every attempt regardless of outcome,
+  // so delivery can be confirmed even when logs/observability access is blocked.
+  try {
+    await getSql()`
+      INSERT INTO webhook_requests (signature_header, signature_valid, raw_body)
+      VALUES (${signatureHeader}, ${sigValid}, ${rawBody})
+    `
+  } catch (err) {
+    console.error('Failed to log webhook request:', err)
+  }
+
+  if (!sigValid) {
     console.error('Clover webhook signature verification failed')
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
