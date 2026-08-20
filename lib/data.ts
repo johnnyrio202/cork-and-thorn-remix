@@ -221,12 +221,13 @@ export const products: Product[] = [
   },
 ]
 
+// Reservation deposit is flat-rate and weekend-only (see RESERVATION_DEPOSIT
+// below) — table tiers no longer carry their own per-tier deposit amount.
 export const tableTiers = [
   {
     id: 'standard',
     name: 'Standard VIP',
     capacity: '2–4 guests',
-    deposit: 150,
     minSpend: 300,
     perks: ['Reserved booth', 'Dedicated server', 'Priority entry'],
   },
@@ -234,7 +235,6 @@ export const tableTiers = [
     id: 'premium',
     name: 'Premium VIP',
     capacity: '4–8 guests',
-    deposit: 350,
     minSpend: 700,
     perks: ['Gold or Center booth', 'Bottle service', 'Dedicated host', 'Skip the line'],
   },
@@ -242,11 +242,18 @@ export const tableTiers = [
     id: 'ultra',
     name: 'Ultra VIP',
     capacity: '8–20 guests',
-    deposit: 600,
     minSpend: 1500,
     perks: ['Stage / Blue / Back / Teremana booth', 'Two-bottle minimum', 'Personal mixologist', 'Reserved hookah', 'VIP entrance'],
   },
 ]
+
+// Flat, non-refundable deposit required to confirm a Saturday or Sunday
+// reservation, regardless of table tier. Weeknight reservations (Mon–Fri)
+// require no deposit.
+export const RESERVATION_DEPOSIT = {
+  amount: 75,
+  weekendDays: [0, 6] as const, // Date#getDay(): 0 = Sunday, 6 = Saturday
+}
 
 export const bottleService = [
   { name: 'Tequila — Añejo', price: 425 },

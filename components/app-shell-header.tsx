@@ -1,17 +1,52 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useVIP } from '@/components/vip-provider'
+import { useCart } from '@/components/cart-provider'
 import { Logo } from '@/components/logo'
-import { Crown, Menu, X, ShoppingBag } from 'lucide-react'
+import { Crown, Menu, X, ShoppingBag, Plus, Minus, Trash2 } from 'lucide-react'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
 
 export function AppShellHeader() {
   const { isVIP, toggleVIP } = useVIP()
+  const {
+    count,
+    lines,
+    total,
+    open: cartOpen,
+    setOpen: setCartOpen,
+    updateQuantity,
+    removeItem,
+  } = useCart()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [isCheckingOut, setIsCheckingOut] = useState(false)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const { scrollY } = useScroll()
+
+  async function handleCheckout() {
+    setIsCheckingOut(true)
+    setCheckoutError(null)
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lines: lines.map((line) => ({ id: line.id, quantity: line.quantity })),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.href) {
+        throw new Error(data.error ?? 'Unable to start checkout')
+      }
+      window.location.href = data.href
+    } catch (err) {
+      setCheckoutError(err instanceof Error ? err.message : 'Unable to start checkout')
+      setIsCheckingOut(false)
+    }
+  }
 
   useMotionValueEvent(scrollY, 'change', (latest) => {
     setScrolled(latest > 40)
@@ -117,18 +152,143 @@ export function AppShellHeader() {
                 )}
               </button>
 
-              <Link
-                href="/shop"
+              <button
+                type="button"
+                onClick={() => setCartOpen(!cartOpen)}
                 className="group relative p-2 text-foreground hover:text-primary transition-colors"
-                aria-label="Shopping bag"
+                aria-label="Open cart"
               >
                 <ShoppingBag className="w-5 h-5 lg:w-6 lg:h-6" strokeWidth={1.5} />
-                <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-              </Link>
+                {count > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-black">
+                    {count}
+                  </span>
+                )}
+              </button>
             </div>
 
           </div>
         </motion.div>
+
+        {/* Cart drawer */}
+        <AnimatePresence>
+          {cartOpen && (
+            <>
+              <motion.div
+                aria-hidden="true"
+                onClick={() => setCartOpen(false)}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 z-[110] bg-black/60"
+              />
+              <motion.div
+                initial={{ opacity: 0, x: 24 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 24 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                className="fixed top-0 right-0 z-[120] flex h-full w-full max-w-sm flex-col bg-[rgba(11,17,27,0.97)] border-l border-white/10 backdrop-blur-xl"
+              >
+                <div className="flex items-center justify-between border-b border-white/10 px-5 py-5">
+                  <h2 className="font-heading text-2xl tracking-wide text-foreground">
+                    Your Bag
+                  </h2>
+                  <button
+                    onClick={() => setCartOpen(false)}
+                    aria-label="Close cart"
+                    className="p-1 text-foreground hover:text-primary transition-colors"
+                  >
+                    <X className="h-5 w-5" strokeWidth={1.5} />
+                  </button>
+                </div>
+
+                {lines.length === 0 ? (
+                  <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center px-5">
+                    <ShoppingBag className="h-10 w-10 text-muted-foreground" strokeWidth={1.5} />
+                    <p className="text-muted-foreground">Your bag is empty.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex-1 overflow-y-auto px-5">
+                      <ul className="flex flex-col gap-4 py-4">
+                        {lines.map((line) => (
+                          <li key={line.id} className="flex gap-3">
+                            <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-md bg-white/5">
+                              <Image
+                                src={line.image || '/placeholder.svg'}
+                                alt={line.name}
+                                fill
+                                className="object-cover"
+                                sizes="80px"
+                              />
+                            </div>
+                            <div className="flex flex-1 flex-col">
+                              <div className="flex items-start justify-between gap-2">
+                                <p className="text-sm font-medium text-foreground">
+                                  {line.name}
+                                </p>
+                                <button
+                                  onClick={() => removeItem(line.id)}
+                                  className="text-muted-foreground transition-colors hover:text-destructive"
+                                  aria-label={`Remove ${line.name}`}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                ${line.price}
+                              </p>
+                              <div className="mt-auto flex items-center gap-2">
+                                <button
+                                  onClick={() => updateQuantity(line.id, line.quantity - 1)}
+                                  className="flex h-7 w-7 items-center justify-center rounded-md border border-white/10 hover:bg-white/5"
+                                  aria-label="Decrease quantity"
+                                >
+                                  <Minus className="h-3 w-3" />
+                                </button>
+                                <span className="w-6 text-center text-sm">
+                                  {line.quantity}
+                                </span>
+                                <button
+                                  onClick={() => updateQuantity(line.id, line.quantity + 1)}
+                                  className="flex h-7 w-7 items-center justify-center rounded-md border border-white/10 hover:bg-white/5"
+                                  aria-label="Increase quantity"
+                                >
+                                  <Plus className="h-3 w-3" />
+                                </button>
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="border-t border-white/10 px-5 py-5">
+                      <div className="mb-3 flex items-center justify-between">
+                        <span className="text-muted-foreground">Subtotal</span>
+                        <span className="font-heading text-2xl text-foreground">
+                          ${total}
+                        </span>
+                      </div>
+                      <button
+                        onClick={handleCheckout}
+                        disabled={isCheckingOut}
+                        className="w-full rounded-full bg-primary py-3 text-sm font-semibold uppercase tracking-wide text-black transition-opacity disabled:opacity-50"
+                      >
+                        {isCheckingOut ? 'Redirecting…' : 'Checkout'}
+                      </button>
+                      {checkoutError && (
+                        <p className="mt-2 text-center text-sm text-destructive">
+                          {checkoutError}
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )}
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
 
         {/* Hamburger dropdown */}
         <AnimatePresence>

@@ -12,8 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { toast } from 'sonner'
-import { tableTiers, bottleService } from '@/lib/data'
+import { tableTiers, bottleService, RESERVATION_DEPOSIT } from '@/lib/data'
 import { cn } from '@/lib/utils'
 
 interface ReservationFormProps {
@@ -27,6 +26,9 @@ export function ReservationForm({ prefilledDate, formRef }: ReservationFormProps
   const [date, setDate] = useState(prefilledDate ?? '')
   const [time, setTime] = useState('')
   const [guests, setGuests] = useState('4')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [requestConfirmed, setRequestConfirmed] = useState(false)
 
   // Sync when parent passes a new prefilled date (calendar selection)
   useEffect(() => {
@@ -34,11 +36,8 @@ export function ReservationForm({ prefilledDate, formRef }: ReservationFormProps
   }, [prefilledDate])
 
   const tier = tableTiers.find((t) => t.id === tierId)!
-  const bottlesTotal = bottles.reduce(
-    (sum, name) => sum + (bottleService.find((b) => b.name === name)?.price ?? 0),
-    0,
-  )
-  const depositTotal = tier.deposit + bottlesTotal
+  const isWeekend = date ? [0, 6].includes(new Date(`${date}T00:00:00`).getDay()) : false
+  const depositAmount = isWeekend ? RESERVATION_DEPOSIT.amount : 0
 
   function toggleBottle(name: string) {
     setBottles((prev) =>
@@ -46,11 +45,35 @@ export function ReservationForm({ prefilledDate, formRef }: ReservationFormProps
     )
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    toast.success('Reservation request received!', {
-      description: `Your ${tier.name} is being held. A $${depositTotal} deposit secures the booking — our team will confirm shortly.`,
-    })
+    setSubmitError(null)
+
+    if (!isWeekend) {
+      // No deposit required Mon–Fri — nothing to charge, just acknowledge
+      // the request (booking persistence/confirmation is a separate, not-yet-built system).
+      setRequestConfirmed(true)
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const res = await fetch('/api/reservations/deposit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tierId, date }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.href) {
+        throw new Error(data.error ?? 'Unable to start deposit checkout')
+      }
+      window.location.href = data.href
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error ? err.message : 'Unable to start deposit checkout',
+      )
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -91,14 +114,11 @@ export function ReservationForm({ prefilledDate, formRef }: ReservationFormProps
                       <Users className="h-3.5 w-3.5" /> {t.capacity}
                     </span>
                     <span className="mt-3 font-heading text-2xl">
-                      ${t.deposit}
+                      ${t.minSpend}
                       <span className="text-sm font-normal text-muted-foreground">
                         {' '}
-                        deposit
+                        minimum spend
                       </span>
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      ${t.minSpend} minimum spend
                     </span>
                     <ul className="mt-3 flex flex-col gap-1.5 border-t border-border/60 pt-3">
                       {t.perks.map((perk) => (
@@ -255,16 +275,15 @@ export function ReservationForm({ prefilledDate, formRef }: ReservationFormProps
                 <dd className="font-medium">{tier.name}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-muted-foreground">Table deposit</dt>
-                <dd>${tier.deposit}</dd>
-              </div>
-              <div className="flex justify-between">
                 <dt className="text-muted-foreground">Minimum spend</dt>
                 <dd>${tier.minSpend}</dd>
               </div>
               {bottles.length > 0 && (
                 <div className="border-t border-border pt-3">
-                  <dt className="mb-2 text-muted-foreground">Bottles</dt>
+                  <dt className="mb-2 text-muted-foreground">
+                    Bottles requested{' '}
+                    <span className="text-xs">(arranged with your host, not charged online)</span>
+                  </dt>
                   {bottles.map((name) => {
                     const b = bottleService.find((x) => x.name === name)!
                     return (
@@ -283,24 +302,39 @@ export function ReservationForm({ prefilledDate, formRef }: ReservationFormProps
 
             <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
               <span className="text-sm text-muted-foreground">
-                Deposit due today
+                {isWeekend ? 'Deposit due today (non-refundable)' : 'Deposit due today'}
               </span>
               <span className="font-heading text-3xl text-primary">
-                ${depositTotal}
+                ${depositAmount}
               </span>
             </div>
 
-            <Button
-              type="submit"
-              onClick={handleSubmit}
-              size="lg"
-              className="mt-5 w-full shadow-glow-primary"
-            >
-              Reserve &amp; Pay Deposit
-            </Button>
+            {requestConfirmed ? (
+              <div className="mt-5 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 text-center text-sm">
+                Reservation request received — we'll confirm shortly.
+              </div>
+            ) : (
+              <Button
+                type="submit"
+                onClick={handleSubmit}
+                size="lg"
+                disabled={isSubmitting}
+                className="mt-5 w-full shadow-glow-primary"
+              >
+                {isSubmitting
+                  ? 'Redirecting…'
+                  : isWeekend
+                    ? `Reserve & Pay $${depositAmount} Deposit`
+                    : 'Request Reservation'}
+              </Button>
+            )}
+            {submitError && (
+              <p className="mt-2 text-center text-sm text-destructive">{submitError}</p>
+            )}
             <p className="mt-3 text-center text-xs text-muted-foreground">
-              Deposit applies to your final tab. Fully refundable up to 48 hours
-              before your reservation.
+              {isWeekend
+                ? `This $${depositAmount} deposit is non-refundable and confirms your Saturday/Sunday reservation.`
+                : 'No deposit required for Monday–Friday reservations.'}
             </p>
           </div>
         </aside>
