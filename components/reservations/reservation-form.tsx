@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { Check, Users, Wine } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,17 +13,18 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { tableTiers, bottleService, NIGHTLIFE_SLOT, isNightlifeSlot } from '@/lib/data'
+import type { Booth } from '@/lib/data'
 import { cn } from '@/lib/utils'
 
 interface ReservationFormProps {
-  prefilledDate?: string
+  date: string
+  booth: Booth | null
   formRef?: React.RefObject<HTMLElement>
+  onBookingComplete?: () => void
 }
 
-export function ReservationForm({ prefilledDate, formRef }: ReservationFormProps = {}) {
-  const [tierId, setTierId] = useState(tableTiers[1].id)
+export function ReservationForm({ date, booth, formRef, onBookingComplete }: ReservationFormProps) {
   const [bottles, setBottles] = useState<string[]>([])
-  const [date, setDate] = useState(prefilledDate ?? '')
   const [time, setTime] = useState('')
   const [guests, setGuests] = useState('4')
   const [guestName, setGuestName] = useState('')
@@ -33,12 +34,7 @@ export function ReservationForm({ prefilledDate, formRef }: ReservationFormProps
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [requestConfirmed, setRequestConfirmed] = useState(false)
 
-  // Sync when parent passes a new prefilled date (calendar selection)
-  useEffect(() => {
-    if (prefilledDate) setDate(prefilledDate)
-  }, [prefilledDate])
-
-  const tier = tableTiers.find((t) => t.id === tierId)!
+  const tier = booth ? tableTiers.find((t) => t.id === booth.tier) : null
   const nightlife = isNightlifeSlot(date, time)
   const depositAmount = nightlife ? NIGHTLIFE_SLOT.depositAmount : 0
 
@@ -51,14 +47,23 @@ export function ReservationForm({ prefilledDate, formRef }: ReservationFormProps
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSubmitError(null)
-    setIsSubmitting(true)
 
+    if (!booth) {
+      setSubmitError('Select a table from the floor plan above first.')
+      return
+    }
+    if (!date) {
+      setSubmitError('Select a date above first.')
+      return
+    }
+
+    setIsSubmitting(true)
     try {
       const res = await fetch('/api/reservations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tierId,
+          boothId: booth.id,
           date,
           time,
           partySize: Number(guests),
@@ -76,6 +81,7 @@ export function ReservationForm({ prefilledDate, formRef }: ReservationFormProps
         return // keep isSubmitting true — page is navigating away
       }
       setRequestConfirmed(true)
+      onBookingComplete?.()
       setIsSubmitting(false)
     } catch (err) {
       setSubmitError(
@@ -89,80 +95,48 @@ export function ReservationForm({ prefilledDate, formRef }: ReservationFormProps
     <section ref={formRef as React.RefObject<HTMLElement> | undefined} className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
       <div className="grid gap-10 lg:grid-cols-[1fr_380px]">
         <form onSubmit={handleSubmit} className="flex flex-col gap-10">
-          {/* Table tiers */}
+          {/* Selected table */}
           <div>
             <h2 className="font-heading text-3xl tracking-wide">
-              1. Choose Your Table
+              1. Your Table
             </h2>
-            <div className="mt-5 grid gap-4 sm:grid-cols-3">
-              {tableTiers.map((t) => {
-                const active = t.id === tierId
-                return (
-                  <button
-                    type="button"
-                    key={t.id}
-                    onClick={() => setTierId(t.id)}
-                    className={cn(
-                      'flex flex-col rounded-2xl border p-5 text-left transition-colors',
-                      active
-                        ? 'border-primary bg-primary/10 shadow-glow-primary'
-                        : 'border-border bg-card hover:border-primary/50',
-                    )}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-heading text-xl tracking-wide">
-                        {t.name}
-                      </span>
-                      {active && (
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                          <Check className="h-3 w-3" />
-                        </span>
-                      )}
-                    </div>
-                    <span className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <Users className="h-3.5 w-3.5" /> {t.capacity}
-                    </span>
-                    <span className="mt-3 font-heading text-2xl">
-                      ${t.minSpend}
-                      <span className="text-sm font-normal text-muted-foreground">
-                        {' '}
-                        minimum spend
-                      </span>
-                    </span>
-                    <ul className="mt-3 flex flex-col gap-1.5 border-t border-border/60 pt-3">
-                      {t.perks.map((perk) => (
-                        <li
-                          key={perk}
-                          className="flex items-center gap-1.5 text-xs text-muted-foreground"
-                        >
-                          <Check className="h-3 w-3 shrink-0 text-primary" />
-                          {perk}
-                        </li>
-                      ))}
-                    </ul>
-                  </button>
-                )
-              })}
-            </div>
+            {booth && tier ? (
+              <div className="mt-5 flex flex-col rounded-2xl border border-primary bg-primary/10 p-5 shadow-glow-primary">
+                <div className="flex items-center justify-between">
+                  <span className="font-heading text-xl tracking-wide">{booth.name}</span>
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <Check className="h-3 w-3" />
+                  </span>
+                </div>
+                <span className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <Users className="h-3.5 w-3.5" /> {booth.capacity}
+                </span>
+                <span className="mt-3 font-heading text-2xl">
+                  ${tier.minSpend}
+                  <span className="text-sm font-normal text-muted-foreground"> minimum spend</span>
+                </span>
+                <ul className="mt-3 flex flex-col gap-1.5 border-t border-border/60 pt-3">
+                  {tier.perks.map((perk) => (
+                    <li key={perk} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Check className="h-3 w-3 shrink-0 text-primary" />
+                      {perk}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p className="mt-5 rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                Pick a date and select a table from the floor plan above to continue.
+              </p>
+            )}
           </div>
 
-          {/* Date / time / party */}
+          {/* Time / party */}
           <div>
             <h2 className="font-heading text-3xl tracking-wide">
-              2. Date &amp; Party
+              2. Arrival Time &amp; Party
             </h2>
-            <div className="mt-5 grid gap-4 sm:grid-cols-3">
-              <div className="grid gap-2">
-                <Label htmlFor="res-date">Date</Label>
-                <Input
-                  id="res-date"
-                  type="date"
-                  required
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="bg-card"
-                />
-              </div>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
                 <Label htmlFor="res-time">Arrival time</Label>
                 <Select value={time} onValueChange={setTime}>
@@ -291,13 +265,19 @@ export function ReservationForm({ prefilledDate, formRef }: ReservationFormProps
             </h3>
             <dl className="mt-5 flex flex-col gap-3 text-sm">
               <div className="flex justify-between">
-                <dt className="text-muted-foreground">Table</dt>
-                <dd className="font-medium">{tier.name}</dd>
+                <dt className="text-muted-foreground">Date</dt>
+                <dd className="font-medium">{date || '—'}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-muted-foreground">Minimum spend</dt>
-                <dd>${tier.minSpend}</dd>
+                <dt className="text-muted-foreground">Table</dt>
+                <dd className="font-medium">{booth?.name ?? '—'}</dd>
               </div>
+              {tier && (
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Minimum spend</dt>
+                  <dd>${tier.minSpend}</dd>
+                </div>
+              )}
               {bottles.length > 0 && (
                 <div className="border-t border-border pt-3">
                   <dt className="mb-2 text-muted-foreground">
@@ -340,7 +320,7 @@ export function ReservationForm({ prefilledDate, formRef }: ReservationFormProps
                 type="submit"
                 onClick={handleSubmit}
                 size="lg"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !booth || !date}
                 className="mt-5 w-full shadow-glow-primary"
               >
                 {isSubmitting

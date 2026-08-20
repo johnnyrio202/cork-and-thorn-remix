@@ -291,3 +291,66 @@ export const bottleService = [
   { name: 'Whiskey — Single Barrel', price: 450 },
   { name: 'Rosé Magnum', price: 320 },
 ]
+
+// Real floor plan booths — canonical list shared by the guest-facing floor
+// plan (spatial-booking.tsx), the availability API, and the staff dashboard,
+// so they can never disagree about what booths exist.
+export type BoothTier = 'standard' | 'premium' | 'ultra'
+
+export interface Booth {
+  id: string
+  name: string
+  capacity: string
+  tier: BoothTier
+  note?: string
+}
+
+export const BOOTHS: Booth[] = [
+  // Stage area (top)
+  { id: 'stage-vip',    name: 'Stage VIP',       capacity: '4–12 ppl', tier: 'ultra',   note: 'Best stage view' },
+  { id: 'dj-vip',      name: 'DJ VIP',           capacity: '2–4 ppl',  tier: 'ultra',   note: 'Right next to the DJ' },
+
+  // Center cluster
+  { id: 'center-1a',   name: 'Center 1',         capacity: '4–8 ppl',  tier: 'premium' },
+  { id: 'center-1b',   name: 'B Center 1',       capacity: '2–4 ppl',  tier: 'standard' },
+  { id: 'center-2',    name: 'Center 2',         capacity: '4–8 ppl',  tier: 'premium' },
+  { id: 'b-center-1',  name: 'B Center 1',       capacity: '2–4 ppl',  tier: 'standard' },
+
+  // Gold row
+  { id: 'gold-1',      name: 'Gold 1',           capacity: '4–8 ppl',  tier: 'premium' },
+  { id: 'gold-2',      name: 'Gold 2',           capacity: '4–8 ppl',  tier: 'premium' },
+  { id: 'gold-3',      name: 'Gold 3',           capacity: '4–8 ppl',  tier: 'premium' },
+
+  // Circle booths
+  { id: 'circle-1',    name: 'Circle 1',         capacity: '2–4 ppl',  tier: 'standard' },
+  { id: 'circle-2',    name: 'Circle 2',         capacity: '2–4 ppl',  tier: 'standard' },
+  { id: 'circle-4',    name: 'Circle 4',         capacity: '2–4 ppl',  tier: 'standard' },
+
+  // Flower area
+  { id: 'flower-couch',name: 'Flower Couch',     capacity: '4–8 ppl',  tier: 'premium', note: 'Signature couch booth' },
+  { id: 'flower-vip',  name: 'Flower VIP',       capacity: '4–12 ppl', tier: 'premium' },
+
+  // Named VIPs
+  { id: 'randi-vip',   name: 'Randi VIP',        capacity: '2–4 ppl',  tier: 'standard' },
+  { id: 'brian-vip',   name: 'Brian VIP',        capacity: '2–4 ppl',  tier: 'standard' },
+
+  // Side / Back
+  { id: 'side-vip',    name: 'Side VIP',         capacity: '4–8 ppl',  tier: 'premium' },
+  { id: 'back-vip',    name: 'Back VIP',         capacity: '8–20 ppl', tier: 'ultra',   note: 'Largest private area' },
+
+  // Premium named
+  { id: 'teremana',    name: 'Teremana VIP',     capacity: '8–12 ppl', tier: 'ultra',   note: 'Teremana sponsored booth' },
+  { id: 'blue-1',      name: 'Blue 1',           capacity: '8–12 ppl', tier: 'ultra' },
+  { id: 'blue-2',      name: 'Blue 2',           capacity: '8–20 ppl', tier: 'ultra',   note: 'Premium large group' },
+  { id: 'bellaire',    name: 'Bellaire VIP',     capacity: '2–6 ppl',  tier: 'premium' },
+]
+
+export const BOOTH_ZONES: { label: string; ids: string[]; cols: number }[] = [
+  { label: 'Stage',          ids: ['stage-vip', 'dj-vip'],                            cols: 2 },
+  { label: 'Center',         ids: ['center-1a', 'center-1b', 'center-2', 'b-center-1'], cols: 4 },
+  { label: 'Gold Row',       ids: ['gold-1', 'gold-2', 'gold-3'],                     cols: 3 },
+  { label: 'Circle',         ids: ['circle-1', 'circle-2', 'circle-4'],               cols: 3 },
+  { label: 'Flower',         ids: ['flower-couch', 'flower-vip', 'randi-vip', 'brian-vip'], cols: 4 },
+  { label: 'Side & Back',    ids: ['side-vip', 'back-vip', 'teremana'],               cols: 3 },
+  { label: 'Blue & Bellaire',ids: ['blue-1', 'blue-2', 'bellaire'],                   cols: 3 },
+]

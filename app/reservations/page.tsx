@@ -1,20 +1,58 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ExperiencesLineup } from '@/components/experiences-lineup'
 import { ReservationForm } from '@/components/reservations/reservation-form'
-import { SpatialBooking } from '@/components/spatial-booking'
+import { SpatialBooking, type AvailabilityMap } from '@/components/spatial-booking'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import type { Booth } from '@/lib/data'
 import { motion } from 'framer-motion'
+
 export default function ExperiencesPage() {
-  const [prefilledDate, setPrefilledDate] = useState<string | undefined>()
+  const [date, setDate] = useState('')
+  const [selectedBooth, setSelectedBooth] = useState<Booth | null>(null)
+  const [availability, setAvailability] = useState<AvailabilityMap>({})
   const formRef = useRef<HTMLElement>(null)
 
-  function handleSecureTable(_day: unknown) {
-    setPrefilledDate(undefined) // call sheet days don't carry dates; scroll to form
-    // Give React a tick to update the date, then scroll to the form
+  useEffect(() => {
+    if (!date) {
+      setAvailability({})
+      return
+    }
+    let cancelled = false
+    fetch(`/api/availability?date=${date}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled) setAvailability(data)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [date])
+
+  function scrollToForm() {
     setTimeout(() => {
       formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }, 80)
+  }
+
+  function handleSecureTable(_day: unknown) {
+    scrollToForm()
+  }
+
+  function handleSelectBooth(booth: Booth) {
+    setSelectedBooth(booth)
+    scrollToForm()
+  }
+
+  function handleDateChange(next: string) {
+    setDate(next)
+    setSelectedBooth(null)
+  }
+
+  function handleBookingComplete() {
+    setSelectedBooth(null)
   }
 
   return (
@@ -49,14 +87,32 @@ export default function ExperiencesPage() {
           <div className="flex-1 h-px bg-white/[0.07]" />
         </div>
         <p className="mt-3 text-center font-sans text-sm text-white/40 max-w-md mx-auto">
-          Pick your table tier, add bottle service, and lock in with a deposit that
-          goes straight toward your tab.
+          Pick a date, then choose your table on the floor plan below.
         </p>
+      </div>
+
+      {/* Date picker */}
+      <div className="mx-auto max-w-xs px-4 sm:px-6">
+        <div className="grid gap-2">
+          <Label htmlFor="res-page-date">Date</Label>
+          <Input
+            id="res-page-date"
+            type="date"
+            value={date}
+            onChange={(e) => handleDateChange(e.target.value)}
+            className="bg-card"
+          />
+        </div>
       </div>
 
       {/* Interactive floor plan */}
       <div className="mx-auto max-w-7xl">
-        <SpatialBooking />
+        <SpatialBooking
+          date={date}
+          availability={availability}
+          selectedBoothId={selectedBooth?.id}
+          onSelectBooth={handleSelectBooth}
+        />
       </div>
 
       {/* Divider */}
@@ -64,8 +120,13 @@ export default function ExperiencesPage() {
         <div className="h-px bg-white/[0.07]" />
       </div>
 
-      {/* Reservation form — receives the date selected from the calendar above */}
-      <ReservationForm prefilledDate={prefilledDate} formRef={formRef} />
+      {/* Reservation form — receives the date and booth selected above */}
+      <ReservationForm
+        date={date}
+        booth={selectedBooth}
+        formRef={formRef}
+        onBookingComplete={handleBookingComplete}
+      />
     </>
   )
 }

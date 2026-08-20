@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server'
 import { createReservationDepositSession } from '@/lib/clover'
 import { getSql } from '@/lib/db'
 import { sendBookingConfirmation } from '@/lib/email'
-import { isNightlifeSlot, NIGHTLIFE_SLOT } from '@/lib/data'
+import { isNightlifeSlot, NIGHTLIFE_SLOT, BOOTHS } from '@/lib/data'
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null)
-  const tierId = body?.tierId
+  const boothId = body?.boothId
   const date = body?.date
   const time = body?.time
   const partySize = Number(body?.partySize)
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   const guestEmail = body?.guestEmail
 
   if (
-    typeof tierId !== 'string' ||
+    typeof boothId !== 'string' ||
     typeof date !== 'string' ||
     typeof time !== 'string' ||
     !Number.isInteger(partySize) ||
@@ -28,21 +28,45 @@ export async function POST(request: Request) {
     !guestEmail.trim()
   ) {
     return NextResponse.json(
-      { error: 'tierId, date, time, partySize, guestName, guestPhone, and guestEmail are required' },
+      { error: 'boothId, date, time, partySize, guestName, guestPhone, and guestEmail are required' },
       { status: 400 },
     )
   }
 
+  const booth = BOOTHS.find((b) => b.id === boothId)
+  if (!booth) {
+    return NextResponse.json({ error: `Unknown booth: ${boothId}` }, { status: 400 })
+  }
+
   const sql = getSql()
   const nightlife = isNightlifeSlot(date, time)
+  const tierId = booth.tier
+
+  // Fast pre-check so an already-taken booth fails before we bother
+  // creating a Clover session. The real guard against a race (two guests
+  // booking the same booth at once) is the WHERE NOT EXISTS on the insert
+  // itself below, not this.
+  const existing = (await sql`
+    SELECT 1 FROM bookings
+    WHERE booth_id = ${boothId} AND reservation_date = ${date}
+      AND (status = 'confirmed' OR (status = 'pending_deposit' AND created_at > now() - interval '20 minutes'))
+    LIMIT 1
+  `) as unknown[]
+  if (existing.length > 0) {
+    return NextResponse.json({ error: 'That table was just booked for this date. Please pick another.' }, { status: 409 })
+  }
 
   try {
     if (!nightlife) {
       const rows = (await sql`
         INSERT INTO bookings
-          (tier_id, reservation_date, arrival_time, party_size, guest_name, guest_phone, guest_email, status, confirmed_at)
-        VALUES
-          (${tierId}, ${date}, ${time}, ${partySize}, ${guestName}, ${guestPhone}, ${guestEmail}, 'confirmed', now())
+          (tier_id, booth_id, reservation_date, arrival_time, party_size, guest_name, guest_phone, guest_email, status, confirmed_at)
+        SELECT ${tierId}, ${boothId}, ${date}, ${time}, ${partySize}, ${guestName}, ${guestPhone}, ${guestEmail}, 'confirmed', now()
+        WHERE NOT EXISTS (
+          SELECT 1 FROM bookings
+          WHERE booth_id = ${boothId} AND reservation_date = ${date}
+            AND (status = 'confirmed' OR (status = 'pending_deposit' AND created_at > now() - interval '20 minutes'))
+        )
         RETURNING tier_id, reservation_date, arrival_time, guest_name, guest_email
       `) as {
         tier_id: string
@@ -53,6 +77,10 @@ export async function POST(request: Request) {
       }[]
 
       const booking = rows[0]
+      if (!booking) {
+        return NextResponse.json({ error: 'That table was just booked for this date. Please pick another.' }, { status: 409 })
+      }
+
       try {
         await sendBookingConfirmation({
           ...booking,
@@ -69,12 +97,23 @@ export async function POST(request: Request) {
     const session = await createReservationDepositSession({ tierId, date, time })
     const depositCents = Math.round(NIGHTLIFE_SLOT.depositAmount * 100)
 
-    await sql`
+    const rows = (await sql`
       INSERT INTO bookings
-        (tier_id, reservation_date, arrival_time, party_size, guest_name, guest_phone, guest_email, promoter_code, deposit_amount_cents, checkout_session_id, status)
-      VALUES
-        (${tierId}, ${date}, ${time}, ${partySize}, ${guestName}, ${guestPhone}, ${guestEmail}, ${NIGHTLIFE_SLOT.promoterCode}, ${depositCents}, ${session.checkoutSessionId}, 'pending_deposit')
-    `
+        (tier_id, booth_id, reservation_date, arrival_time, party_size, guest_name, guest_phone, guest_email, promoter_code, deposit_amount_cents, checkout_session_id, status)
+      SELECT ${tierId}, ${boothId}, ${date}, ${time}, ${partySize}, ${guestName}, ${guestPhone}, ${guestEmail}, ${NIGHTLIFE_SLOT.promoterCode}, ${depositCents}, ${session.checkoutSessionId}, 'pending_deposit'
+      WHERE NOT EXISTS (
+        SELECT 1 FROM bookings
+        WHERE booth_id = ${boothId} AND reservation_date = ${date}
+          AND (status = 'confirmed' OR (status = 'pending_deposit' AND created_at > now() - interval '20 minutes'))
+      )
+      RETURNING id
+    `) as { id: string }[]
+
+    if (rows.length === 0) {
+      // Lost the race — the Clover session is created but unattached and
+      // will simply expire unused (no charge happened, nothing to undo).
+      return NextResponse.json({ error: 'That table was just booked for this date. Please pick another.' }, { status: 409 })
+    }
 
     return NextResponse.json(session)
   } catch (err) {
