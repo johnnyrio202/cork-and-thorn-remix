@@ -19,6 +19,7 @@ type Booking = {
   guest_email: string
   promoter_code: string | null
   deposit_amount_cents: number | null
+  notes: string | null
   status: string
   created_at: string
 }
@@ -127,6 +128,7 @@ export function StaffDashboard() {
                 <th className="px-4 py-3 font-medium">Table</th>
                 <th className="px-4 py-3 font-medium">Guest</th>
                 <th className="px-4 py-3 font-medium">Party</th>
+                <th className="px-4 py-3 font-medium">Notes</th>
                 <th className="px-4 py-3 font-medium">Promoter</th>
                 <th className="px-4 py-3 font-medium">Deposit</th>
                 <th className="px-4 py-3 font-medium">Status</th>
@@ -146,6 +148,9 @@ export function StaffDashboard() {
                       <div className="text-xs text-white/40">{b.guest_phone}</div>
                     </td>
                     <td className="px-4 py-3">{b.party_size}</td>
+                    <td className="px-4 py-3 max-w-[180px] truncate" title={b.notes ?? undefined}>
+                      {b.notes ?? '—'}
+                    </td>
                     <td className="px-4 py-3">{b.promoter_code ?? '—'}</td>
                     <td className="px-4 py-3">
                       {b.deposit_amount_cents ? `$${(b.deposit_amount_cents / 100).toFixed(2)}` : '—'}
@@ -174,7 +179,7 @@ export function StaffDashboard() {
               })}
               {bookings.length === 0 && !isLoading && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-6 text-center text-white/40">
+                  <td colSpan={9} className="px-4 py-6 text-center text-white/40">
                     No bookings for this date.
                   </td>
                 </tr>

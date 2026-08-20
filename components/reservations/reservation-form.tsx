@@ -1,61 +1,46 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Check, Users, Wine } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { tableTiers, bottleService, NIGHTLIFE_SLOT, isNightlifeSlot } from '@/lib/data'
-import type { Booth } from '@/lib/data'
-import { cn } from '@/lib/utils'
+import { Textarea } from '@/components/ui/textarea'
+import { tableTiers, NIGHTLIFE_SLOT, isNightlifeSlot, type Booth } from '@/lib/data'
 
 interface ReservationFormProps {
   date: string
-  booth: Booth | null
-  formRef?: React.RefObject<HTMLElement>
+  time: string
+  booth: Booth
+  partySize: number
+  bottles: string[]
   onBookingComplete?: () => void
 }
 
-export function ReservationForm({ date, booth, formRef, onBookingComplete }: ReservationFormProps) {
-  const [bottles, setBottles] = useState<string[]>([])
-  const [time, setTime] = useState('')
-  const [guests, setGuests] = useState('4')
+export function ReservationForm({
+  date,
+  time,
+  booth,
+  partySize,
+  bottles,
+  onBookingComplete,
+}: ReservationFormProps) {
   const [guestName, setGuestName] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
   const [guestEmail, setGuestEmail] = useState('')
+  const [notes, setNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [requestConfirmed, setRequestConfirmed] = useState(false)
 
-  const tier = booth ? tableTiers.find((t) => t.id === booth.tier) : null
+  const tier = tableTiers.find((t) => t.id === booth.tier)!
   const nightlife = isNightlifeSlot(date, time)
   const depositAmount = nightlife ? NIGHTLIFE_SLOT.depositAmount : 0
-
-  function toggleBottle(name: string) {
-    setBottles((prev) =>
-      prev.includes(name) ? prev.filter((b) => b !== name) : [...prev, name],
-    )
-  }
+  const canSubmit = guestName.trim() && guestPhone.trim() && guestEmail.trim()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSubmitError(null)
-
-    if (!booth) {
-      setSubmitError('Select a table from the floor plan above first.')
-      return
-    }
-    if (!date) {
-      setSubmitError('Select a date above first.')
-      return
-    }
+    if (!canSubmit) return
 
     setIsSubmitting(true)
     try {
@@ -66,283 +51,144 @@ export function ReservationForm({ date, booth, formRef, onBookingComplete }: Res
           boothId: booth.id,
           date,
           time,
-          partySize: Number(guests),
+          partySize,
           guestName,
           guestPhone,
           guestEmail,
+          notes: notes.trim() || undefined,
         }),
       })
       const data = await res.json()
       if (!res.ok) {
-        throw new Error(data.error ?? 'Unable to complete reservation')
+        // 409 (table just taken) is user-actionable and worth showing verbatim;
+        // anything else gets a friendly fallback instead of a raw API string.
+        throw new Error(res.status === 409 ? data.error : 'Something went wrong — please check your details and try again.')
       }
       if (data.href) {
         window.location.href = data.href
         return // keep isSubmitting true — page is navigating away
       }
       setRequestConfirmed(true)
-      onBookingComplete?.()
       setIsSubmitting(false)
     } catch (err) {
-      setSubmitError(
-        err instanceof Error ? err.message : 'Unable to complete reservation',
-      )
+      setSubmitError(err instanceof Error ? err.message : 'Something went wrong — please try again.')
       setIsSubmitting(false)
     }
   }
 
-  return (
-    <section ref={formRef as React.RefObject<HTMLElement> | undefined} className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-      <div className="grid gap-10 lg:grid-cols-[1fr_380px]">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-10">
-          {/* Selected table */}
-          <div>
-            <h2 className="font-heading text-3xl tracking-wide">
-              1. Your Table
-            </h2>
-            {booth && tier ? (
-              <div className="mt-5 flex flex-col rounded-2xl border border-primary bg-primary/10 p-5 shadow-glow-primary">
-                <div className="flex items-center justify-between">
-                  <span className="font-heading text-xl tracking-wide">{booth.name}</span>
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                    <Check className="h-3 w-3" />
-                  </span>
-                </div>
-                <span className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <Users className="h-3.5 w-3.5" /> {booth.capacity}
-                </span>
-                <span className="mt-3 font-heading text-2xl">
-                  ${tier.minSpend}
-                  <span className="text-sm font-normal text-muted-foreground"> minimum spend</span>
-                </span>
-                <ul className="mt-3 flex flex-col gap-1.5 border-t border-border/60 pt-3">
-                  {tier.perks.map((perk) => (
-                    <li key={perk} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Check className="h-3 w-3 shrink-0 text-primary" />
-                      {perk}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <p className="mt-5 rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                Pick a date and select a table from the floor plan above to continue.
-              </p>
-            )}
-          </div>
-
-          {/* Time / party */}
-          <div>
-            <h2 className="font-heading text-3xl tracking-wide">
-              2. Arrival Time &amp; Party
-            </h2>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <div className="grid gap-2">
-                <Label htmlFor="res-time">Arrival time</Label>
-                <Select value={time} onValueChange={setTime}>
-                  <SelectTrigger id="res-time" className="bg-card">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {['9:00 PM', '10:00 PM', '11:00 PM', '12:00 AM', '1:00 AM', '2:00 AM'].map((t) => (
-                      <SelectItem key={t} value={t}>
-                        {t}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="res-guests">Guests</Label>
-                <Select value={guests} onValueChange={setGuests}>
-                  <SelectTrigger id="res-guests" className="bg-card">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-                      <SelectItem key={n} value={String(n)}>
-                        {n} {n === 1 ? 'guest' : 'guests'}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottle service */}
-          <div>
-            <h2 className="font-heading text-3xl tracking-wide">
-              3. Bottle Service{' '}
-              <span className="text-base font-normal text-muted-foreground">
-                (optional)
-              </span>
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Pre-select bottles to add to your deposit and skip the wait.
-            </p>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {bottleService.map((b) => {
-                const active = bottles.includes(b.name)
-                return (
-                  <button
-                    type="button"
-                    key={b.name}
-                    onClick={() => toggleBottle(b.name)}
-                    className={cn(
-                      'flex items-center justify-between rounded-xl border px-4 py-3 text-left transition-colors',
-                      active
-                        ? 'border-primary bg-primary/10'
-                        : 'border-border bg-card hover:border-primary/50',
-                    )}
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <Wine
-                        className={cn(
-                          'h-4 w-4',
-                          active ? 'text-primary' : 'text-muted-foreground',
-                        )}
-                      />
-                      <span className="text-sm font-medium">{b.name}</span>
-                    </span>
-                    <span className="font-heading text-lg">${b.price}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Contact */}
-          <div>
-            <h2 className="font-heading text-3xl tracking-wide">
-              4. Your Details
-            </h2>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <div className="grid gap-2">
-                <Label htmlFor="res-name">Full name</Label>
-                <Input
-                  id="res-name"
-                  required
-                  placeholder="Your name"
-                  className="bg-card"
-                  value={guestName}
-                  onChange={(e) => setGuestName(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="res-phone">Phone</Label>
-                <Input
-                  id="res-phone"
-                  type="tel"
-                  required
-                  placeholder="(725) 000-0000"
-                  className="bg-card"
-                  value={guestPhone}
-                  onChange={(e) => setGuestPhone(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2 sm:col-span-2">
-                <Label htmlFor="res-email">Email</Label>
-                <Input
-                  id="res-email"
-                  type="email"
-                  required
-                  placeholder="you@email.com"
-                  className="bg-card"
-                  value={guestEmail}
-                  onChange={(e) => setGuestEmail(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-        </form>
-
-        {/* Summary */}
-        <aside className="lg:sticky lg:top-24 lg:self-start">
-          <div className="rounded-2xl border border-border bg-card p-6">
-            <h3 className="font-heading text-2xl tracking-wide">
-              Reservation Summary
-            </h3>
-            <dl className="mt-5 flex flex-col gap-3 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Date</dt>
-                <dd className="font-medium">{date || '—'}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Table</dt>
-                <dd className="font-medium">{booth?.name ?? '—'}</dd>
-              </div>
-              {tier && (
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Minimum spend</dt>
-                  <dd>${tier.minSpend}</dd>
-                </div>
-              )}
-              {bottles.length > 0 && (
-                <div className="border-t border-border pt-3">
-                  <dt className="mb-2 text-muted-foreground">
-                    Bottles requested{' '}
-                    <span className="text-xs">(arranged with your host, not charged online)</span>
-                  </dt>
-                  {bottles.map((name) => {
-                    const b = bottleService.find((x) => x.name === name)!
-                    return (
-                      <div
-                        key={name}
-                        className="flex justify-between py-0.5 text-sm"
-                      >
-                        <span>{name}</span>
-                        <span>${b.price}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </dl>
-
-            {nightlife && (
-              <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
-                <span className="text-sm text-muted-foreground">
-                  Deposit due today
-                </span>
-                <span className="font-heading text-3xl text-primary">
-                  ${depositAmount}
-                </span>
-              </div>
-            )}
-
-            {requestConfirmed ? (
-              <div className="mt-5 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 text-center text-sm">
-                Reservation confirmed — see you then!
-              </div>
-            ) : (
-              <Button
-                type="submit"
-                onClick={handleSubmit}
-                size="lg"
-                disabled={isSubmitting || !booth || !date}
-                className="mt-5 w-full shadow-glow-primary"
-              >
-                {isSubmitting
-                  ? nightlife
-                    ? 'Redirecting…'
-                    : 'Reserving…'
-                  : nightlife
-                    ? `Reserve & Pay $${depositAmount} Deposit`
-                    : 'Reserve Table'}
-              </Button>
-            )}
-            {submitError && (
-              <p className="mt-2 text-center text-sm text-destructive">{submitError}</p>
-            )}
-            <p className="mt-3 text-center text-xs text-muted-foreground">
-              {nightlife
-                ? `This $${depositAmount} deposit is non-refundable if you no-show, and is applied to your table's spend the night of your reservation.`
-                : 'No deposit required for this reservation.'}
-            </p>
-          </div>
-        </aside>
+  if (requestConfirmed) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-6 text-center">
+        <div className="rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 text-sm">
+          Reservation confirmed — see you then!
+        </div>
+        <Button variant="outline" onClick={onBookingComplete}>
+          Book Another
+        </Button>
       </div>
-    </section>
+    )
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      <div className="rounded-xl border border-border bg-card p-4 text-sm">
+        <div className="flex justify-between py-1">
+          <span className="text-muted-foreground">Table</span>
+          <span className="font-medium">{booth.name}</span>
+        </div>
+        <div className="flex justify-between py-1">
+          <span className="text-muted-foreground">Date</span>
+          <span className="font-medium">{date}</span>
+        </div>
+        <div className="flex justify-between py-1">
+          <span className="text-muted-foreground">Time</span>
+          <span className="font-medium">{time}</span>
+        </div>
+        <div className="flex justify-between py-1">
+          <span className="text-muted-foreground">Guests</span>
+          <span className="font-medium">{partySize}</span>
+        </div>
+        <div className="flex justify-between py-1">
+          <span className="text-muted-foreground">Minimum spend</span>
+          <span className="font-medium">${tier.minSpend}</span>
+        </div>
+        {bottles.length > 0 && (
+          <div className="border-t border-border mt-2 pt-2">
+            <p className="text-muted-foreground mb-1">Bottles requested</p>
+            {bottles.map((name) => (
+              <p key={name} className="text-xs">{name}</p>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="grid gap-3">
+        <div className="grid gap-1.5">
+          <Label htmlFor="res-name">Full name</Label>
+          <Input
+            id="res-name"
+            required
+            placeholder="Your name"
+            value={guestName}
+            onChange={(e) => setGuestName(e.target.value)}
+          />
+        </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor="res-phone">Phone</Label>
+          <Input
+            id="res-phone"
+            type="tel"
+            required
+            placeholder="(725) 000-0000"
+            value={guestPhone}
+            onChange={(e) => setGuestPhone(e.target.value)}
+          />
+        </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor="res-email">Email</Label>
+          <Input
+            id="res-email"
+            type="email"
+            required
+            placeholder="you@email.com"
+            value={guestEmail}
+            onChange={(e) => setGuestEmail(e.target.value)}
+          />
+        </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor="res-notes">Special notes (optional)</Label>
+          <Textarea
+            id="res-notes"
+            placeholder="Birthday, anniversary, new job — anything we should know"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={3}
+          />
+        </div>
+      </div>
+
+      {nightlife && (
+        <div className="flex items-center justify-between border-t border-border pt-4">
+          <span className="text-sm text-muted-foreground">Deposit due today</span>
+          <span className="font-heading text-3xl text-primary">${depositAmount}</span>
+        </div>
+      )}
+
+      <Button type="submit" size="lg" disabled={isSubmitting || !canSubmit} className="w-full shadow-glow-primary">
+        {isSubmitting
+          ? nightlife
+            ? 'Redirecting…'
+            : 'Reserving…'
+          : nightlife
+            ? `Pay $${depositAmount} Deposit`
+            : 'Confirm Reservation'}
+      </Button>
+      {submitError && <p className="text-center text-sm text-destructive">{submitError}</p>}
+      <p className="text-center text-xs text-muted-foreground">
+        {nightlife
+          ? `This $${depositAmount} deposit is non-refundable if you no-show, and is applied to your table's spend the night of your reservation.`
+          : 'No deposit required for this reservation.'}
+      </p>
+    </form>
   )
 }

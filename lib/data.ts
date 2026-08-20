@@ -262,13 +262,37 @@ export const NIGHTLIFE_SLOT = {
   promoterCode: 'PARRIS',
 }
 
-const ARRIVAL_TIME_HOURS: Record<string, number> = {
+export const ARRIVAL_TIME_OPTIONS = [
+  '9:00 PM',
+  '10:00 PM',
+  '11:00 PM',
+  '12:00 AM',
+  '1:00 AM',
+  '2:00 AM',
+] as const
+
+export const ARRIVAL_TIME_HOURS: Record<string, number> = {
   '9:00 PM': 21,
   '10:00 PM': 22,
   '11:00 PM': 23,
   '12:00 AM': 0,
   '1:00 AM': 1,
   '2:00 AM': 2,
+}
+
+// A booking blocks its booth for this many hours from arrival, not the
+// whole night — a table can turn over later the same night once this
+// window passes. Applies uniformly, Nightlife included.
+export const RESERVATION_DURATION_HOURS = 3
+
+// Maps arrival_time onto a continuous 21-26 timeline so post-midnight
+// hours (12AM-2AM) sort correctly *after* evening ones for the same
+// night, instead of wrapping back to 0-2. Lets overlap math be simple
+// subtraction instead of modular arithmetic.
+export function normalizeNightHour(time: string): number | undefined {
+  const hour = ARRIVAL_TIME_HOURS[time]
+  if (hour === undefined) return undefined
+  return hour < 6 ? hour + 24 : hour
 }
 
 export function isNightlifeSlot(date: string, time: string): boolean {

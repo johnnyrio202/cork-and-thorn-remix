@@ -70,17 +70,19 @@ export async function POST(request: Request) {
     type BookingRow = {
       checkout_session_id: string
       tier_id: string
+      booth_id: string
       reservation_date: string
       arrival_time: string
       guest_name: string
       guest_email: string
+      notes: string | null
       deposit_amount_cents: number | null
     }
     const rows = (await sql`
       UPDATE bookings
       SET status = 'confirmed', confirmed_at = now()
       WHERE checkout_session_id = ${checkoutSessionId} AND status = 'pending_deposit'
-      RETURNING checkout_session_id, tier_id, reservation_date, arrival_time, guest_name, guest_email, deposit_amount_cents
+      RETURNING checkout_session_id, tier_id, booth_id, reservation_date, arrival_time, guest_name, guest_email, notes, deposit_amount_cents
     `) as BookingRow[]
     const booking = rows[0]
 

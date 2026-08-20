@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   const bookings = await sql`
     SELECT id, booth_id, tier_id, reservation_date, arrival_time, party_size,
            guest_name, guest_phone, guest_email, promoter_code,
-           deposit_amount_cents, status, created_at
+           deposit_amount_cents, notes, status, created_at
     FROM bookings
     WHERE reservation_date = ${date}
     ORDER BY CASE arrival_time

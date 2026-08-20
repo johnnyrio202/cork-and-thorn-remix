@@ -69,6 +69,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-scroll-behavior="smooth"
       className={`dark ${lora.variable} ${pinyon.variable} ${geistMono.variable} ${roboto.variable} bg-background`}
     >
       <body className="font-sans antialiased">
