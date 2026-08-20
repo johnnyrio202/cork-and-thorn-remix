@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import crypto from 'node:crypto'
 import { getSql } from '@/lib/db'
-import { sendReservationDepositReceipt } from '@/lib/email'
+import { sendBookingConfirmation } from '@/lib/email'
 
 function isSignatureValid(rawBody: string, header: string | null, secret: string): boolean {
   if (!header) return false
@@ -67,34 +67,36 @@ export async function POST(request: Request) {
   const sql = getSql()
 
   if (status.toUpperCase() === 'APPROVED') {
-    type DepositRow = {
+    type BookingRow = {
       checkout_session_id: string
       tier_id: string
       reservation_date: string
+      arrival_time: string
       guest_name: string
       guest_email: string
+      deposit_amount_cents: number | null
     }
     const rows = (await sql`
-      UPDATE reservation_deposits
-      SET status = 'paid', paid_at = now()
-      WHERE checkout_session_id = ${checkoutSessionId} AND status = 'pending'
-      RETURNING checkout_session_id, tier_id, reservation_date, guest_name, guest_email
-    `) as DepositRow[]
+      UPDATE bookings
+      SET status = 'confirmed', confirmed_at = now()
+      WHERE checkout_session_id = ${checkoutSessionId} AND status = 'pending_deposit'
+      RETURNING checkout_session_id, tier_id, reservation_date, arrival_time, guest_name, guest_email, deposit_amount_cents
+    `) as BookingRow[]
     const booking = rows[0]
 
     if (booking) {
       try {
-        await sendReservationDepositReceipt(booking)
+        await sendBookingConfirmation(booking)
       } catch (err) {
-        // Payment already recorded as paid — don't fail the webhook over email delivery.
-        console.error('Failed to send reservation deposit receipt:', err)
+        // Payment already recorded as confirmed — don't fail the webhook over email delivery.
+        console.error('Failed to send booking confirmation email:', err)
       }
     }
   } else if (status.toUpperCase() === 'DECLINED') {
     await sql`
-      UPDATE reservation_deposits
+      UPDATE bookings
       SET status = 'failed'
-      WHERE checkout_session_id = ${checkoutSessionId} AND status = 'pending'
+      WHERE checkout_session_id = ${checkoutSessionId} AND status = 'pending_deposit'
     `
   }
 

@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { tableTiers, bottleService, RESERVATION_DEPOSIT } from '@/lib/data'
+import { tableTiers, bottleService, NIGHTLIFE_SLOT, isNightlifeSlot } from '@/lib/data'
 import { cn } from '@/lib/utils'
 
 interface ReservationFormProps {
@@ -39,8 +39,8 @@ export function ReservationForm({ prefilledDate, formRef }: ReservationFormProps
   }, [prefilledDate])
 
   const tier = tableTiers.find((t) => t.id === tierId)!
-  const isWeekend = date ? [0, 6].includes(new Date(`${date}T00:00:00`).getDay()) : false
-  const depositAmount = isWeekend ? RESERVATION_DEPOSIT.amount : 0
+  const nightlife = isNightlifeSlot(date, time)
+  const depositAmount = nightlife ? NIGHTLIFE_SLOT.depositAmount : 0
 
   function toggleBottle(name: string) {
     setBottles((prev) =>
@@ -51,35 +51,35 @@ export function ReservationForm({ prefilledDate, formRef }: ReservationFormProps
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSubmitError(null)
-
-    if (!isWeekend) {
-      // No deposit required Mon–Fri — nothing to charge, just acknowledge
-      // the request (booking persistence/confirmation is a separate, not-yet-built system).
-      setRequestConfirmed(true)
-      return
-    }
-
     setIsSubmitting(true)
+
     try {
-      const res = await fetch('/api/reservations/deposit', {
+      const res = await fetch('/api/reservations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tierId,
           date,
+          time,
+          partySize: Number(guests),
           guestName,
           guestPhone,
           guestEmail,
         }),
       })
       const data = await res.json()
-      if (!res.ok || !data.href) {
-        throw new Error(data.error ?? 'Unable to start deposit checkout')
+      if (!res.ok) {
+        throw new Error(data.error ?? 'Unable to complete reservation')
       }
-      window.location.href = data.href
+      if (data.href) {
+        window.location.href = data.href
+        return // keep isSubmitting true — page is navigating away
+      }
+      setRequestConfirmed(true)
+      setIsSubmitting(false)
     } catch (err) {
       setSubmitError(
-        err instanceof Error ? err.message : 'Unable to start deposit checkout',
+        err instanceof Error ? err.message : 'Unable to complete reservation',
       )
       setIsSubmitting(false)
     }
@@ -170,7 +170,7 @@ export function ReservationForm({ prefilledDate, formRef }: ReservationFormProps
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
-                    {['9:00 PM', '10:00 PM', '11:00 PM', '12:00 AM'].map((t) => (
+                    {['9:00 PM', '10:00 PM', '11:00 PM', '12:00 AM', '1:00 AM', '2:00 AM'].map((t) => (
                       <SelectItem key={t} value={t}>
                         {t}
                       </SelectItem>
@@ -320,18 +320,20 @@ export function ReservationForm({ prefilledDate, formRef }: ReservationFormProps
               )}
             </dl>
 
-            <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
-              <span className="text-sm text-muted-foreground">
-                {isWeekend ? 'Deposit due today (non-refundable)' : 'Deposit due today'}
-              </span>
-              <span className="font-heading text-3xl text-primary">
-                ${depositAmount}
-              </span>
-            </div>
+            {nightlife && (
+              <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
+                <span className="text-sm text-muted-foreground">
+                  Deposit due today
+                </span>
+                <span className="font-heading text-3xl text-primary">
+                  ${depositAmount}
+                </span>
+              </div>
+            )}
 
             {requestConfirmed ? (
               <div className="mt-5 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 text-center text-sm">
-                Reservation request received — we'll confirm shortly.
+                Reservation confirmed — see you then!
               </div>
             ) : (
               <Button
@@ -342,19 +344,21 @@ export function ReservationForm({ prefilledDate, formRef }: ReservationFormProps
                 className="mt-5 w-full shadow-glow-primary"
               >
                 {isSubmitting
-                  ? 'Redirecting…'
-                  : isWeekend
+                  ? nightlife
+                    ? 'Redirecting…'
+                    : 'Reserving…'
+                  : nightlife
                     ? `Reserve & Pay $${depositAmount} Deposit`
-                    : 'Request Reservation'}
+                    : 'Reserve Table'}
               </Button>
             )}
             {submitError && (
               <p className="mt-2 text-center text-sm text-destructive">{submitError}</p>
             )}
             <p className="mt-3 text-center text-xs text-muted-foreground">
-              {isWeekend
-                ? `This $${depositAmount} deposit is non-refundable and confirms your Saturday/Sunday reservation.`
-                : 'No deposit required for Monday–Friday reservations.'}
+              {nightlife
+                ? `This $${depositAmount} deposit is non-refundable if you no-show, and is applied to your table's spend the night of your reservation.`
+                : 'No deposit required for this reservation.'}
             </p>
           </div>
         </aside>

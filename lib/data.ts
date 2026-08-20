@@ -221,8 +221,9 @@ export const products: Product[] = [
   },
 ]
 
-// Reservation deposit is flat-rate and weekend-only (see RESERVATION_DEPOSIT
-// below) — table tiers no longer carry their own per-tier deposit amount.
+// Reservation deposit only applies during Nightlife hours (see
+// NIGHTLIFE_SLOT below) — table tiers no longer carry their own per-tier
+// deposit amount.
 export const tableTiers = [
   {
     id: 'standard',
@@ -247,12 +248,39 @@ export const tableTiers = [
   },
 ]
 
-// Flat, non-refundable deposit required to confirm a Saturday or Sunday
-// reservation, regardless of table tier. Weeknight reservations (Mon–Fri)
-// require no deposit.
-export const RESERVATION_DEPOSIT = {
-  amount: 75,
-  weekendDays: [0, 6] as const, // Date#getDay(): 0 = Sunday, 6 = Saturday
+// Friday/Saturday 11pm-3am "Nightlife" hours — currently booked entirely by
+// phone with promoter Parris, off any system of record. Bringing it online:
+// a booking that falls in this window requires a flat, non-refundable
+// (for no-shows; credited toward table spend otherwise) $75 deposit and is
+// tagged with Parris's promoter code so his attribution is preserved. Any
+// other time — including Friday/Saturday before 11pm — needs neither.
+export const NIGHTLIFE_SLOT = {
+  days: [5, 6] as const, // Date#getDay(): 5 = Friday, 6 = Saturday
+  startHour: 23, // 11:00 PM
+  endHour: 3, // 3:00 AM
+  depositAmount: 75,
+  promoterCode: 'PARRIS',
+}
+
+const ARRIVAL_TIME_HOURS: Record<string, number> = {
+  '9:00 PM': 21,
+  '10:00 PM': 22,
+  '11:00 PM': 23,
+  '12:00 AM': 0,
+  '1:00 AM': 1,
+  '2:00 AM': 2,
+}
+
+export function isNightlifeSlot(date: string, time: string): boolean {
+  if (!date || !time) return false
+  const day = new Date(`${date}T00:00:00`).getDay()
+  if (!(NIGHTLIFE_SLOT.days as readonly number[]).includes(day)) return false
+
+  const hour = ARRIVAL_TIME_HOURS[time]
+  if (hour === undefined) return false
+
+  // 23:00 through 23:59 and 0:00 through 2:59 (wraps past midnight)
+  return hour >= NIGHTLIFE_SLOT.startHour || hour < NIGHTLIFE_SLOT.endHour
 }
 
 export const bottleService = [

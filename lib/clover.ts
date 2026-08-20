@@ -1,4 +1,4 @@
-import { products, tableTiers, RESERVATION_DEPOSIT } from '@/lib/data'
+import { products, tableTiers, NIGHTLIFE_SLOT, isNightlifeSlot } from '@/lib/data'
 
 const CLOVER_API_BASE_URL =
   process.env.CLOVER_API_BASE_URL ?? 'https://apisandbox.dev.clover.com'
@@ -85,11 +85,12 @@ export async function createHostedCheckoutSession(
 export type ReservationDepositInput = {
   tierId: string
   date: string // YYYY-MM-DD, venue-local
+  time: string // e.g. "11:00 PM"
 }
 
-// Deposit is flat-rate and weekend-only — amount and eligibility are both
-// decided here from canonical data, never from the client, since this
-// charges a real non-refundable fee.
+// Deposit only applies to the Friday/Saturday 11pm-3am Nightlife slot —
+// eligibility and amount are both decided here from canonical data, never
+// from the client, since this charges a real non-refundable fee.
 export async function createReservationDepositSession(
   input: ReservationDepositInput,
 ): Promise<CloverCheckoutSession> {
@@ -103,15 +104,14 @@ export async function createReservationDepositSession(
     throw new Error(`Invalid date: ${input.date}`)
   }
 
-  const day = parsedDate.getDay()
-  if (!(RESERVATION_DEPOSIT.weekendDays as readonly number[]).includes(day)) {
-    throw new Error('Deposit only required for Saturday/Sunday reservations')
+  if (!isNightlifeSlot(input.date, input.time)) {
+    throw new Error('Deposit only required for the Friday/Saturday Nightlife slot (11pm-3am)')
   }
 
   return createHostedCheckoutSessionFromLineItems([
     {
-      name: `${tier.name} Reservation Deposit (non-refundable)`,
-      price: Math.round(RESERVATION_DEPOSIT.amount * 100),
+      name: `${tier.name} Nightlife Reservation Deposit (non-refundable)`,
+      price: Math.round(NIGHTLIFE_SLOT.depositAmount * 100),
       unitQty: 1,
     },
   ])
