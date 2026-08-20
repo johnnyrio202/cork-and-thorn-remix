@@ -52,13 +52,12 @@ export async function POST(request: Request) {
   }
 
   const payload = JSON.parse(rawBody)
-  console.log('Clover webhook payload:', JSON.stringify(payload))
 
-  // Field casing isn't fully documented — accept the likely variants and
-  // log the raw payload above so the real shape can be confirmed from logs.
-  const status: string | undefined = payload.status ?? payload.Status
-  const checkoutSessionId: string | undefined =
-    payload.data ?? payload.Data ?? payload.checkoutSessionId ?? payload.checkoutSessionUuid
+  // Confirmed against a real delivery: { type, id, merchantId, status,
+  // message, checkoutSessionId } — Clover's docs describe this in prose
+  // only and don't match this casing (they imply a "data" field).
+  const status: string | undefined = payload.status
+  const checkoutSessionId: string | undefined = payload.checkoutSessionId
 
   if (!status || !checkoutSessionId) {
     console.error('Clover webhook missing expected fields:', payload)
