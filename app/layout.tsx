@@ -1,4 +1,5 @@
 import { Analytics } from '@vercel/analytics/next'
+import { ClerkProvider } from '@clerk/nextjs'
 import type { Metadata, Viewport } from 'next'
 import { Lora, Pinyon_Script, Geist_Mono, Roboto } from 'next/font/google'
 import './globals.css'
@@ -73,17 +74,19 @@ export default function RootLayout({
       className={`dark ${lora.variable} ${pinyon.variable} ${geistMono.variable} ${roboto.variable} bg-background`}
     >
       <body className="font-sans antialiased">
-        <VipProvider>
-          <CartProvider>
-            <AppShellHeader />
-            <div className="pb-[calc(5rem+env(safe-area-inset-bottom))]">
-              {children}
-            </div>
-            <SiteFooter />
-            <AppShellNav />
-            <Toaster position="top-center" />
-          </CartProvider>
-        </VipProvider>
+        <ClerkProvider afterSignOutUrl="/menu">
+          <VipProvider>
+            <CartProvider>
+              <AppShellHeader />
+              <div className="pb-[calc(5rem+env(safe-area-inset-bottom))]">
+                {children}
+              </div>
+              <SiteFooter />
+              <AppShellNav />
+              <Toaster position="top-center" />
+            </CartProvider>
+          </VipProvider>
+        </ClerkProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

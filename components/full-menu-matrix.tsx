@@ -42,11 +42,6 @@ const VOL3: Item[] = [
   { name: 'Sunset Vine', sub: 'Fresh Lemon, Peach, Fresh Basil, Ginger Beer', menuDescription: 'Stone fruit with herbaceous and spicy notes.', pours: [{ label: 'Zero-Proof', price: 14 }] },
   { name: 'Crimson Petal', sub: 'Fresh Lemon, Strawberry, Fever-Tree Pink Grapefruit Soda', menuDescription: 'Berry-forward and refreshing with citrus brightness.', pours: [{ label: 'Zero-Proof', price: 12 }] },
 ]
-const SECRET: Item[] = [
-  { name: 'The Cork & Thorn Signature', sub: "Chef's creation — ask your bartender", pours: [{ label: 'Cocktail', price: 25 }] },
-  { name: 'VIP Night Cap', sub: 'Vintage spirits, rare infusions — by request only', pours: [{ label: 'Pour', price: 35 }] },
-]
-
 const SPIRITS: Record<string, { label: string; items: Item[] }> = {
   vodka: {
     label: 'Vodka',
@@ -348,10 +343,9 @@ const EXHALES_TIER2 = [
 ]
 
 const COCKTAIL_VOLS = [
-  { id: 'vol1',   label: 'Vol 1',       sub: 'The Blooms'      },
-  { id: 'vol2',   label: 'Vol 2',       sub: 'The Roots'       },
-  { id: 'vol3',   label: 'Vol 3',       sub: 'The Mock Garden' },
-  { id: 'secret', label: 'Secret Menu', sub: null, isSecret: true },
+  { id: 'vol1', label: 'Vol 1', sub: 'The Blooms'      },
+  { id: 'vol2', label: 'Vol 2', sub: 'The Roots'       },
+  { id: 'vol3', label: 'Vol 3', sub: 'The Mock Garden' },
 ]
 
 const SPIRIT_CATS = [
@@ -516,7 +510,6 @@ function ContentPanel({ tier1, tier2, tier3 }: { tier1: Tier1Val; tier2: string;
   let heading = ''
   let description: string | null = null
   let note: string | null = null
-  let isSecret = false
 
   if (tier1 === 'sips') {
     if (tier2 === 'cocktails') {
@@ -536,16 +529,10 @@ function ContentPanel({ tier1, tier2, tier3 }: { tier1: Tier1Val; tier2: string;
           description: 'Zero-proof, full experience. House-pressed juices, botanical infusions, and ceremonial teas — crafted with the same care as our full bar program. Clean, complex, and completely satisfying.',
           items: VOL3,
         },
-        secret: {
-          label: 'Secret Menu',
-          description: 'Off-menu builds known only to the inner circle. Ask your server — or don\'t. These exist for the curious.',
-          items: SECRET,
-        },
       }
       heading     = map[tier3]?.label ?? ''
       description = map[tier3]?.description ?? null
       items       = map[tier3]?.items ?? []
-      isSecret = tier3 === 'secret'
     } else if (tier2 === 'spirits') {
       heading = SPIRITS[tier3]?.label ?? ''
       items   = SPIRITS[tier3]?.items ?? []
@@ -599,7 +586,7 @@ function ContentPanel({ tier1, tier2, tier3 }: { tier1: Tier1Val; tier2: string;
           </p>
         )}
         <div className="flex items-baseline justify-between mb-5 pb-4 border-b border-white/[0.06]">
-          <h3 className={`font-sans text-sm uppercase tracking-[0.2em] ${isSecret ? 'text-primary' : 'text-white/40'}`}>
+          <h3 className="font-sans text-sm uppercase tracking-[0.2em] text-white/40">
             {heading}
           </h3>
           {items.length > 0 && tier2 !== 'hookah' && (
@@ -769,7 +756,7 @@ function ContentPanel({ tier1, tier2, tier3 }: { tier1: Tier1Val; tier2: string;
         ) : (
           <div className="space-y-2.5">
             {items.map((item, idx) => (
-              <ItemCard key={`${item.name}-${idx}`} item={item} index={idx} isSecret={isSecret} />
+              <ItemCard key={`${item.name}-${idx}`} item={item} index={idx} />
             ))}
           </div>
         )}
@@ -899,7 +886,7 @@ export function FullMenuMatrix() {
               <div className="mb-4 h-px bg-gradient-to-r from-transparent via-white/[0.05] to-transparent" />
               <div className="flex flex-wrap gap-2 md:gap-2.5 justify-center">
                 {tier2 === 'cocktails' && COCKTAIL_VOLS.map((p) => (
-                  <Pill key={p.id} active={tier3 === p.id} size="sm" isSecret={p.isSecret} onClick={() => setTier3(p.id)}>
+                  <Pill key={p.id} active={tier3 === p.id} size="sm" onClick={() => setTier3(p.id)}>
                     {p.label} {p.sub && <span className="text-[10px] opacity-70">— {p.sub}</span>}
                   </Pill>
                 ))}
