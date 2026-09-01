@@ -136,3 +136,21 @@ CREATE TABLE IF NOT EXISTS orders (
   paid_at timestamptz
 );
 CREATE INDEX IF NOT EXISTS orders_status_idx ON orders (status);
+
+-- Shared inbox for Private Party, Catering, Job, and Contact form
+-- submissions. One table (not four) with type-specific fields in
+-- `details` jsonb, since the staff-facing use case is one filterable
+-- inbox, not four separate tables.
+CREATE TABLE IF NOT EXISTS inquiries (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  type text NOT NULL,
+  status text NOT NULL DEFAULT 'new',
+  name text NOT NULL,
+  email text NOT NULL,
+  phone text,
+  details jsonb NOT NULL DEFAULT '{}',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS inquiries_type_status_idx ON inquiries (type, status);
+CREATE INDEX IF NOT EXISTS inquiries_created_idx ON inquiries (created_at DESC);

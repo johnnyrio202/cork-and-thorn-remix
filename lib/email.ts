@@ -1,5 +1,6 @@
 import { Resend } from 'resend'
 import { tableTiers, BOOTHS } from '@/lib/data'
+import type { InquiryType } from '@/lib/inquiries'
 
 let _resend: Resend | null = null
 
@@ -67,5 +68,48 @@ export async function sendBookingConfirmation(booking: {
         ${refLine}
       </div>
     `,
+  })
+}
+
+const INQUIRY_LABELS: Record<InquiryType, string> = {
+  party: 'private party inquiry',
+  catering: 'catering inquiry',
+  job: 'job application',
+  contact: 'message',
+}
+
+export async function sendInquiryConfirmation(type: InquiryType, name: string, email: string): Promise<void> {
+  const label = INQUIRY_LABELS[type]
+  await getResend().emails.send({
+    from: 'Cork & Thorn <onboarding@resend.dev>',
+    to: email,
+    subject: `We received your ${label}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+        <h2>Thanks, ${name}.</h2>
+        <p>We received your ${label} and our team will follow up soon.</p>
+      </div>
+    `,
+  })
+}
+
+// Optional — degrades to a no-op when unset, same pattern as
+// lib/sms.ts's isSmsConfigured(). Nothing sets STAFF_NOTIFICATION_EMAIL
+// by default, so staff currently rely on checking /staff/inquiries
+// directly until someone opts into this.
+export async function notifyStaffInquiry(
+  type: InquiryType,
+  name: string,
+  email: string,
+  phone: string | null,
+): Promise<void> {
+  const staffEmail = process.env.STAFF_NOTIFICATION_EMAIL
+  if (!staffEmail) return
+
+  await getResend().emails.send({
+    from: 'Cork & Thorn <onboarding@resend.dev>',
+    to: staffEmail,
+    subject: `New ${INQUIRY_LABELS[type]}: ${name}`,
+    html: `<p>${name} (${email}${phone ? `, ${phone}` : ''}) submitted a new ${INQUIRY_LABELS[type]}. Check <a href="https://cork-and-thorn-remix.vercel.app/staff/inquiries">/staff/inquiries</a>.</p>`,
   })
 }

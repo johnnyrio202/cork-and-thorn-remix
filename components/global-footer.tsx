@@ -1,16 +1,19 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Mail, Phone, MapPin, Share2, Heart } from 'lucide-react'
+import { Mail, Phone, MapPin, Share2, Heart, type LucideIcon } from 'lucide-react'
+
+type FooterLink = { label: string; icon?: LucideIcon; value?: string; href?: string }
 
 export function GlobalFooter() {
-  const footerSections = [
+  const footerSections: { title: string; links: FooterLink[] }[] = [
     {
       title: 'Contact',
       links: [
         { label: 'Email', icon: Mail, value: 'hello@corkandthorn.com' },
         { label: 'Phone', icon: Phone, value: '+1 (555) 000-0000' },
         { label: 'Location', icon: MapPin, value: '123 Main St, Downtown' },
+        { label: 'Contact Us', href: '/contact' },
       ],
     },
     {
@@ -19,8 +22,9 @@ export function GlobalFooter() {
         { label: 'Book a Table' },
         { label: 'Events' },
         { label: 'Menu' },
-        { label: 'Careers' },
-        { label: 'Private Events' },
+        { label: 'Careers', href: '/jobs' },
+        { label: 'Private Events', href: '/private-parties' },
+        { label: 'Catering', href: '/catering' },
       ],
     },
     {
@@ -81,11 +85,12 @@ export function GlobalFooter() {
               <ul className="space-y-3">
                 {section.links.map((link, linkIdx) => {
                   const Icon = link.icon
+                  const href = link.href ?? '#'
                   return (
                     <li key={linkIdx}>
                       {Icon ? (
                         <a
-                          href="#"
+                          href={href}
                           className="flex items-center gap-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
                         >
                           <Icon className="h-4 w-4" />
@@ -93,7 +98,7 @@ export function GlobalFooter() {
                         </a>
                       ) : (
                         <a
-                          href="#"
+                          href={href}
                           className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                         >
                           {link.label}
@@ -128,7 +133,7 @@ export function GlobalFooter() {
               <a href="#" className="transition-colors hover:text-foreground">
                 Terms of Service
               </a>
-              <a href="#" className="transition-colors hover:text-foreground">
+              <a href="/jobs" className="transition-colors hover:text-foreground">
                 Careers
               </a>
             </div>

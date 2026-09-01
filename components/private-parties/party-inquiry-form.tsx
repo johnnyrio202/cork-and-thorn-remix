@@ -26,15 +26,51 @@ const eventTypes = [
 
 export function PartyInquiryForm() {
   const [eventType, setEventType] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    toast.success('Inquiry sent!', {
-      description:
-        'Thank you — our events team will reach out within 24 hours to craft your night.',
-    })
-    ;(e.target as HTMLFormElement).reset()
-    setEventType('')
+    const form = e.currentTarget
+    const data = new FormData(form)
+
+    if (!eventType) {
+      toast.error('Please select an event type')
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const res = await fetch('/api/inquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'party',
+          name: data.get('name'),
+          email: data.get('email'),
+          phone: data.get('phone'),
+          details: {
+            eventType,
+            preferredDate: data.get('date') || null,
+            guestCount: data.get('guests'),
+            message: data.get('details') || null,
+          },
+        }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.error ?? 'Unable to send inquiry')
+      }
+
+      toast.success('Inquiry sent!', {
+        description: 'Thank you — our events team will reach out within 24 hours to craft your night.',
+      })
+      form.reset()
+      setEventType('')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Unable to send inquiry')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -50,12 +86,13 @@ export function PartyInquiryForm() {
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <div className="grid gap-2">
           <Label htmlFor="p-name">Full name</Label>
-          <Input id="p-name" required placeholder="Your name" className="bg-background" />
+          <Input id="p-name" name="name" required placeholder="Your name" className="bg-background" />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="p-email">Email</Label>
           <Input
             id="p-email"
+            name="email"
             type="email"
             required
             placeholder="you@email.com"
@@ -66,6 +103,7 @@ export function PartyInquiryForm() {
           <Label htmlFor="p-phone">Phone</Label>
           <Input
             id="p-phone"
+            name="phone"
             type="tel"
             required
             placeholder="(725) 000-0000"
@@ -74,7 +112,7 @@ export function PartyInquiryForm() {
         </div>
         <div className="grid gap-2">
           <Label htmlFor="p-type">Event type</Label>
-          <Select value={eventType} onValueChange={setEventType}>
+          <Select value={eventType} onValueChange={(value) => setEventType(value ?? '')}>
             <SelectTrigger id="p-type" className="bg-background">
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
@@ -89,14 +127,16 @@ export function PartyInquiryForm() {
         </div>
         <div className="grid gap-2">
           <Label htmlFor="p-date">Preferred date</Label>
-          <Input id="p-date" type="date" className="bg-background" />
+          <Input id="p-date" name="date" type="date" className="bg-background" />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="p-guests">Estimated guests</Label>
           <Input
             id="p-guests"
+            name="guests"
             type="number"
             min={1}
+            required
             placeholder="e.g. 25"
             className="bg-background"
           />
@@ -105,6 +145,7 @@ export function PartyInquiryForm() {
           <Label htmlFor="p-details">Vision &amp; details</Label>
           <Textarea
             id="p-details"
+            name="details"
             rows={5}
             placeholder="Tell us about the occasion, any entertainment requests, bottle service, catering, or special touches you have in mind."
             className="bg-background"
@@ -112,8 +153,8 @@ export function PartyInquiryForm() {
         </div>
       </div>
 
-      <Button type="submit" size="lg" className="mt-6 w-full shadow-glow-primary sm:w-auto">
-        Submit Inquiry
+      <Button type="submit" size="lg" disabled={isSubmitting} className="mt-6 w-full shadow-glow-primary sm:w-auto">
+        {isSubmitting ? 'Sending…' : 'Submit Inquiry'}
       </Button>
     </form>
   )
