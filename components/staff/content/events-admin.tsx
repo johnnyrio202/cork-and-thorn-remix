@@ -11,6 +11,13 @@ import type { ContentEvent } from '@/lib/content-data'
 
 const CATEGORIES = ['R&B', 'Hip-Hop', 'Live Band', 'Live Music', 'DJ Set', 'Open Mic', 'Game Night', 'Comedy']
 
+const REPEAT_OPTIONS = [
+  { value: 'none', label: "Doesn't repeat" },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'biweekly', label: 'Bi-weekly' },
+  { value: 'monthly', label: 'Monthly' },
+]
+
 const EMPTY_FORM = {
   title: '',
   date: '',
@@ -23,6 +30,8 @@ const EMPTY_FORM = {
   imageUrl: '',
   capacity: '',
   published: true,
+  repeat: 'none',
+  repeatUntil: '',
 }
 
 export function EventsAdmin() {
@@ -32,6 +41,7 @@ export function EventsAdmin() {
   const [isUploading, setIsUploading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [status, setStatus] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     const res = await fetch('/api/staff/content/events')
@@ -57,6 +67,8 @@ export function EventsAdmin() {
       imageUrl: event.image_url,
       capacity: event.capacity === null ? '' : String(event.capacity),
       published: event.published,
+      repeat: 'none',
+      repeatUntil: '',
     })
   }
 
@@ -84,8 +96,13 @@ export function EventsAdmin() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!editingId && form.repeat !== 'none' && !form.repeatUntil) {
+      setError('Pick a "Repeat until" date')
+      return
+    }
     setIsSaving(true)
     setError(null)
+    setStatus(null)
     try {
       const payload = {
         title: form.title,
@@ -99,6 +116,9 @@ export function EventsAdmin() {
         imageUrl: form.imageUrl,
         capacity: form.capacity.trim() === '' ? null : Number(form.capacity),
         published: form.published,
+        ...(!editingId && form.repeat !== 'none'
+          ? { repeat: form.repeat, repeatUntil: form.repeatUntil }
+          : {}),
       }
       const res = await fetch(
         editingId ? `/api/staff/content/events/${editingId}` : '/api/staff/content/events',
@@ -110,6 +130,9 @@ export function EventsAdmin() {
       )
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Save failed')
+      if (!editingId && Array.isArray(data.events) && data.events.length > 1) {
+        setStatus(`Created ${data.events.length} events (${form.repeat}, through ${form.repeatUntil}).`)
+      }
       resetForm()
       load()
     } catch (err) {
@@ -180,6 +203,38 @@ export function EventsAdmin() {
                   />
                 </div>
               </div>
+
+              {!editingId && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="repeat">Repeats</Label>
+                    <select
+                      id="repeat"
+                      value={form.repeat}
+                      onChange={(e) => setForm((f) => ({ ...f, repeat: e.target.value }))}
+                      className="h-9 rounded-lg border border-input bg-background px-2.5 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                    >
+                      {REPEAT_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {form.repeat !== 'none' && (
+                    <div className="grid gap-1.5">
+                      <Label htmlFor="repeatUntil">Repeat until</Label>
+                      <Input
+                        id="repeatUntil"
+                        type="date"
+                        required
+                        min={form.date || undefined}
+                        value={form.repeatUntil}
+                        onChange={(e) => setForm((f) => ({ ...f, repeatUntil: e.target.value }))}
+                        className="bg-background"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1.5">
@@ -287,6 +342,7 @@ export function EventsAdmin() {
             </div>
 
             {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
+            {status && <p className="mt-3 text-sm text-emerald-400">{status}</p>}
 
             <div className="mt-5 flex gap-2">
               <Button type="submit" disabled={isSaving} className="flex-1">
