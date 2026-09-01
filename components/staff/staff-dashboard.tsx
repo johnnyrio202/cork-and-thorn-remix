@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { ReservationDatePicker } from '@/components/reservations/date-picker'
 import { SpatialBooking, type AvailabilityMap, type BoothOccupant } from '@/components/spatial-booking'
+import { StaffNav } from '@/components/staff/staff-nav'
 import { BOOTHS } from '@/lib/data'
 
 type Booking = {
@@ -94,7 +95,10 @@ export function StaffDashboard() {
   return (
     <div className="min-h-screen bg-[#0B111B] px-4 py-10 sm:px-6 lg:px-10">
       <div className="mx-auto flex max-w-7xl items-center justify-between">
-        <h1 className="font-heading text-3xl tracking-wide text-foreground">Staff Dashboard</h1>
+        <div className="flex items-center gap-6">
+          <h1 className="font-heading text-3xl tracking-wide text-foreground">Staff Dashboard</h1>
+          <StaffNav />
+        </div>
         <Button variant="ghost" onClick={handleLogout}>Sign out</Button>
       </div>
 
