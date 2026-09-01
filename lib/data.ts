@@ -4,7 +4,11 @@ export type EventItem = {
   date: string // ISO date yyyy-mm-dd
   day: string
   time: string
-  category: 'R&B' | 'Hip-Hop' | 'Live Band' | 'Live Music' | 'DJ Set' | 'Open Mic' | 'Game Night' | 'Comedy'
+  // Was a strict union, loosened to match reality: the staff content
+  // form (app/api/staff/content/events) has always taken free text here,
+  // so CMS-sourced events (see lib/content-data.ts's ContentEvent) were
+  // never actually guaranteed to fit the old union.
+  category: string
   description: string
   price: number
   image: string

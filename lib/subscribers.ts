@@ -36,11 +36,16 @@ export async function listSubscribers(limit = 200, offset = 0): Promise<{ rows: 
 
 export async function subscriberCounts(): Promise<{ email: number; sms: number; total: number }> {
   const sql = getSql()
+  // count(*)::int — without the cast, Postgres returns bigint, which
+  // this driver hands back as a string, not a number (same issue fixed
+  // in lib/orders.ts's ticketsSoldOrHeld — found there by a real test
+  // that broke on it; fixing it here proactively since it's the same
+  // pattern).
   const rows = (await sql`
     SELECT
-      count(*) FILTER (WHERE email IS NOT NULL AND email_opt_in) AS email,
-      count(*) FILTER (WHERE phone IS NOT NULL AND sms_opt_in) AS sms,
-      count(*) AS total
+      count(*) FILTER (WHERE email IS NOT NULL AND email_opt_in)::int AS email,
+      count(*) FILTER (WHERE phone IS NOT NULL AND sms_opt_in)::int AS sms,
+      count(*)::int AS total
     FROM subscribers
   `) as { email: number; sms: number; total: number }[]
   return rows[0] ?? { email: 0, sms: 0, total: 0 }

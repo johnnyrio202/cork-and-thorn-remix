@@ -21,6 +21,7 @@ const EMPTY_FORM = {
   price: '0',
   artist: '',
   imageUrl: '',
+  capacity: '',
   published: true,
 }
 
@@ -54,6 +55,7 @@ export function EventsAdmin() {
       price: String(event.price),
       artist: event.artist,
       imageUrl: event.image_url,
+      capacity: event.capacity === null ? '' : String(event.capacity),
       published: event.published,
     })
   }
@@ -95,6 +97,7 @@ export function EventsAdmin() {
         price: Number(form.price) || 0,
         artist: form.artist,
         imageUrl: form.imageUrl,
+        capacity: form.capacity.trim() === '' ? null : Number(form.capacity),
         published: form.published,
       }
       const res = await fetch(
@@ -226,6 +229,19 @@ export function EventsAdmin() {
                     className="bg-background"
                   />
                 </div>
+              </div>
+
+              <div className="grid gap-1.5">
+                <Label htmlFor="capacity">Ticket capacity (blank = unlimited)</Label>
+                <Input
+                  id="capacity"
+                  type="number"
+                  min="0"
+                  placeholder="Unlimited"
+                  value={form.capacity}
+                  onChange={(e) => setForm((f) => ({ ...f, capacity: e.target.value }))}
+                  className="bg-background"
+                />
               </div>
 
               <div className="grid gap-1.5">

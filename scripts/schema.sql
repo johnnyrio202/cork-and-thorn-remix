@@ -154,3 +154,11 @@ CREATE TABLE IF NOT EXISTS inquiries (
 );
 CREATE INDEX IF NOT EXISTS inquiries_type_status_idx ON inquiries (type, status);
 CREATE INDEX IF NOT EXISTS inquiries_created_idx ON inquiries (created_at DESC);
+
+-- Event ticket sales: capacity on the event, and a fast link from an
+-- order back to the event it's for (line_items jsonb already has the
+-- snapshot; this is just so capacity/reporting queries don't need to
+-- parse jsonb).
+ALTER TABLE events ADD COLUMN IF NOT EXISTS capacity int;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS event_id uuid REFERENCES events(id);
+CREATE INDEX IF NOT EXISTS orders_event_idx ON orders (event_id) WHERE event_id IS NOT NULL;

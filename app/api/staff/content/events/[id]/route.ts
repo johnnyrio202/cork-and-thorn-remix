@@ -24,6 +24,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       price = COALESCE(${body.price ?? null}, price),
       image_url = COALESCE(${body.imageUrl ?? null}, image_url),
       artist = COALESCE(${body.artist ?? null}, artist),
+      capacity = COALESCE(${body.capacity ?? null}, capacity),
       published = COALESCE(${body.published ?? null}, published),
       updated_at = now()
     WHERE id = ${id}

@@ -28,6 +28,7 @@ export async function POST(request: Request) {
   const price = Number(body?.price ?? 0)
   const imageUrl = typeof body?.imageUrl === 'string' ? body.imageUrl : ''
   const artist = typeof body?.artist === 'string' ? body.artist : ''
+  const capacity = body?.capacity !== undefined && body.capacity !== null && body.capacity !== '' ? Number(body.capacity) : null
   const published = body?.published !== false
 
   if (
@@ -46,12 +47,12 @@ export async function POST(request: Request) {
   const slug = slugify(title, date)
   const sql = getSql()
   const rows = (await sql`
-    INSERT INTO events (title, slug, date, day, time, category, description, price, image_url, artist, published)
-    VALUES (${title}, ${slug}, ${date}, ${day}, ${time}, ${category}, ${description}, ${price}, ${imageUrl}, ${artist}, ${published})
+    INSERT INTO events (title, slug, date, day, time, category, description, price, image_url, artist, capacity, published)
+    VALUES (${title}, ${slug}, ${date}, ${day}, ${time}, ${category}, ${description}, ${price}, ${imageUrl}, ${artist}, ${capacity}, ${published})
     ON CONFLICT (slug) DO UPDATE SET
       title = EXCLUDED.title, day = EXCLUDED.day, time = EXCLUDED.time, category = EXCLUDED.category,
       description = EXCLUDED.description, price = EXCLUDED.price, image_url = EXCLUDED.image_url,
-      artist = EXCLUDED.artist, published = EXCLUDED.published, updated_at = now()
+      artist = EXCLUDED.artist, capacity = EXCLUDED.capacity, published = EXCLUDED.published, updated_at = now()
     RETURNING *
   `) as Record<string, unknown>[]
   return NextResponse.json({ event: rows[0] }, { status: 201 })

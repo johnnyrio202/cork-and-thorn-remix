@@ -1,4 +1,5 @@
 import { getSql } from '@/lib/db'
+import type { EventItem } from '@/lib/data'
 
 export type ContentEvent = {
   id: string
@@ -12,6 +13,7 @@ export type ContentEvent = {
   price: number
   image_url: string
   artist: string
+  capacity: number | null
   published: boolean
   created_at: string
   updated_at: string
@@ -32,6 +34,26 @@ export type GalleryImage = {
   caption: string
   sort_order: number
   created_at: string
+}
+
+// The reservation-flow calendar components (weekly-calendar-carousel.tsx,
+// experiences-lineup.tsx) were built against lib/data.ts's static
+// EventItem shape. This adapts a real CMS row to that shape so those
+// components' date-grouping/animation/interaction logic didn't need to
+// change — only their data source did.
+export function toEventItem(event: ContentEvent): EventItem {
+  return {
+    id: event.id,
+    title: event.title,
+    date: event.date,
+    day: event.day,
+    time: event.time,
+    category: event.category,
+    description: event.description,
+    price: event.price,
+    image: event.image_url,
+    artist: event.artist,
+  }
 }
 
 export function slugify(title: string, date: string): string {

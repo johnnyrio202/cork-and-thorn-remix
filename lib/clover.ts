@@ -1,4 +1,5 @@
 import { products, tableTiers, NIGHTLIFE_SLOT, isNightlifeSlot } from '@/lib/data'
+import { getSql } from '@/lib/db'
 
 const CLOVER_API_BASE_URL =
   process.env.CLOVER_API_BASE_URL ?? 'https://apisandbox.dev.clover.com'
@@ -80,6 +81,38 @@ export async function createHostedCheckoutSession(
   })
 
   return createHostedCheckoutSessionFromLineItems(lineItems)
+}
+
+export type TicketCheckoutInput = { eventId: string; quantity: number }
+export type TicketEvent = { id: string; title: string; price: number; capacity: number | null }
+
+// Looks the event up server-side rather than trusting a client-sent
+// price/title — same invariant as createHostedCheckoutSession above.
+// Capacity is checked by the caller (app/api/checkout/tickets/route.ts),
+// not here, since that also needs to run before Clover is ever called.
+export async function createTicketCheckoutSession(
+  input: TicketCheckoutInput,
+): Promise<{ session: CloverCheckoutSession; event: TicketEvent }> {
+  if (!Number.isInteger(input.quantity) || input.quantity < 1) {
+    throw new Error('Invalid ticket quantity')
+  }
+
+  const sql = getSql()
+  const rows = (await sql`
+    SELECT id, title, price, capacity FROM events WHERE id = ${input.eventId} AND published = true LIMIT 1
+  `) as TicketEvent[]
+  const row = rows[0]
+  if (!row) {
+    throw new Error('Event not found')
+  }
+  // numeric columns come back as strings from the Neon driver, not JS
+  // numbers, despite TicketEvent's declared type.
+  const event: TicketEvent = { ...row, price: Number(row.price) }
+
+  const session = await createHostedCheckoutSessionFromLineItems([
+    { name: `${event.title} — Ticket`, price: Math.round(event.price * 100), unitQty: input.quantity },
+  ])
+  return { session, event }
 }
 
 export type ReservationDepositInput = {

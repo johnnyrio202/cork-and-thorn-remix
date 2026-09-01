@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type Stripe from 'stripe'
 import { getStripe } from '@/lib/stripe'
 import { markOrderFailed, markOrderPaid } from '@/lib/orders'
+import { sendTicketConfirmation } from '@/lib/email'
 
 // Fulfillment must be driven from this handler, not the success page — a
 // customer can pay and lose their connection before /shop?checkout=success
@@ -32,7 +33,14 @@ export async function POST(request: Request) {
   if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
     const session = event.data.object as Stripe.Checkout.Session
     if (session.payment_status !== 'unpaid') {
-      await markOrderPaid(session.id, session.customer_details?.email ?? null)
+      const order = await markOrderPaid(session.id, session.customer_details?.email ?? null)
+      if (order?.event_id) {
+        try {
+          await sendTicketConfirmation(order)
+        } catch (err) {
+          console.error('Failed to send ticket confirmation email:', err)
+        }
+      }
     }
   } else if (event.type === 'checkout.session.async_payment_failed') {
     const session = event.data.object as Stripe.Checkout.Session

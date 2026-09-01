@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, X, MapPin, Users, Phone, CheckCircle } from 'lucide-react'
 import dynamic from 'next/dynamic'
+import type { EventItem } from '@/lib/data'
 // Disable SSR for the calendar carousel — it renders date numbers from
 // `new Date()` which differ between the UTC server and the client's local
 // timezone, causing persistent hydration mismatches.
@@ -647,7 +648,7 @@ function FlyerRotator() {
 // ---------------------------------------------------------------------------
 type Phase = 'calendar' | 'map'
 
-export function ExperiencesSection() {
+export function ExperiencesSection({ events }: { events: EventItem[] }) {
   const [phase, setPhase]             = useState<Phase>('calendar')
   const [authEvent, setAuthEvent]     = useState<typeof WEEKLY_EVENTS[0] | null>(null)
   const [selectedTable, setSelectedTable] = useState<string | null>(null)
@@ -681,6 +682,7 @@ export function ExperiencesSection() {
             >
               {/* Weekly lineup carousel */}
               <WeeklyCalendarCarousel
+                events={events}
                 onTableClick={() => { setPhase('map'); setSelectedTable(null) }}
               />
 

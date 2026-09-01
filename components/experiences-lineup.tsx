@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Clock, Wine, Calendar } from 'lucide-react'
-import { events, type EventItem } from '@/lib/data'
+import type { EventItem } from '@/lib/data'
 
 // ---------------------------------------------------------------------------
 // Day config — starting Sunday
@@ -33,7 +33,7 @@ const FLYER_IMAGE: Record<string, string> = {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-function getEventsForDay(dayName: string): EventItem[] {
+function getEventsForDay(events: EventItem[], dayName: string): EventItem[] {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   return events
@@ -79,6 +79,7 @@ function isToday(iso: string): boolean {
 // Props
 // ---------------------------------------------------------------------------
 export interface ExperiencesLineupProps {
+  events: EventItem[]
   onRSVPClick?:  (event: EventItem) => void
   onTableClick?: (event: EventItem) => void
 }
@@ -89,7 +90,7 @@ const EASE   = { duration: 0.32, ease: [0.22, 1, 0.36, 1] as const }
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
-export function ExperiencesLineup({ onRSVPClick, onTableClick }: ExperiencesLineupProps) {
+export function ExperiencesLineup({ events, onRSVPClick, onTableClick }: ExperiencesLineupProps) {
   // Day selection
   const [dayIdx, setDayIdx]       = useState(0)
   const [dayDir, setDayDir]       = useState<1 | -1>(1)
@@ -103,7 +104,7 @@ export function ExperiencesLineup({ onRSVPClick, onTableClick }: ExperiencesLine
   const ribbonRef = useRef<HTMLDivElement>(null)
 
   const day        = DAYS[dayIdx]
-  const allEvts    = getEventsForDay(day.dataDay)
+  const allEvts    = getEventsForDay(events, day.dataDay)
   const showNights = groupByDate(allEvts)
   const night      = showNights[nightIdx]
   const activeEvt  = night?.evts[slotIdx] ?? null
@@ -181,7 +182,7 @@ export function ExperiencesLineup({ onRSVPClick, onTableClick }: ExperiencesLine
       >
         {DAYS.map((d, idx) => {
           const active     = idx === dayIdx
-          const dayEvts    = getEventsForDay(d.dataDay)
+          const dayEvts    = getEventsForDay(events, d.dataDay)
           const hasTonight = dayEvts.some(e => isToday(e.date))
           const nights     = groupByDate(dayEvts)
           const nextNight  = nights[0]

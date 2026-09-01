@@ -1,7 +1,8 @@
 import 'server-only'
 import Stripe from 'stripe'
 import { products } from '@/lib/data'
-import type { CartLineInput, CloverCheckoutSession } from '@/lib/clover'
+import { getSql } from '@/lib/db'
+import type { CartLineInput, CloverCheckoutSession, TicketEvent } from '@/lib/clover'
 
 let _stripe: Stripe | null = null
 
@@ -68,6 +69,49 @@ export async function createStripeCheckoutSession(
     throw new Error('Stripe did not return a checkout URL')
   }
   return { href: session.url, checkoutSessionId: session.id }
+}
+
+export async function createTicketStripeCheckoutSession(
+  input: { eventId: string; quantity: number },
+  siteUrl: string,
+): Promise<{ session: CloverCheckoutSession; event: TicketEvent }> {
+  if (!Number.isInteger(input.quantity) || input.quantity < 1) {
+    throw new Error('Invalid ticket quantity')
+  }
+
+  const sql = getSql()
+  const rows = (await sql`
+    SELECT id, title, price, capacity FROM events WHERE id = ${input.eventId} AND published = true LIMIT 1
+  `) as TicketEvent[]
+  const row = rows[0]
+  if (!row) {
+    throw new Error('Event not found')
+  }
+  // numeric columns come back as strings from the Neon driver, not JS
+  // numbers, despite TicketEvent's declared type.
+  const event: TicketEvent = { ...row, price: Number(row.price) }
+
+  const session = await getStripe().checkout.sessions.create({
+    mode: 'payment',
+    line_items: [
+      {
+        price_data: {
+          currency: 'usd',
+          product_data: { name: `${event.title} — Ticket` },
+          unit_amount: Math.round(event.price * 100),
+        },
+        quantity: input.quantity,
+      },
+    ],
+    success_url: `${siteUrl}/events?checkout=success`,
+    cancel_url: `${siteUrl}/events?checkout=cancelled`,
+    integration_identifier: `corkandthorn_tickets_${randomLabelSuffix()}`,
+  } as Stripe.Checkout.SessionCreateParams)
+
+  if (!session.url) {
+    throw new Error('Stripe did not return a checkout URL')
+  }
+  return { session: { href: session.url, checkoutSessionId: session.id }, event }
 }
 
 export { getStripe }

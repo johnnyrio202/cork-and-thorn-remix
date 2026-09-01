@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Clock } from 'lucide-react'
-import { events, type EventItem } from '@/lib/data'
+import type { EventItem } from '@/lib/data'
 
 // ---------------------------------------------------------------------------
 // Day config
@@ -42,7 +42,7 @@ function groupByDate(evts: EventItem[]): ShowNight[] {
 
 // todayRef is set client-side only to avoid SSR/client date mismatch.
 // Pass it explicitly rather than calling new Date() at module/render scope.
-function getEventsForDay(dayName: string, today: Date | null): EventItem[] {
+function getEventsForDay(events: EventItem[], dayName: string, today: Date | null): EventItem[] {
   return events
     .filter(e => e.day === dayName)
     .filter(e => today === null || new Date(e.date + 'T00:00:00') >= today)
@@ -70,10 +70,11 @@ const SPRING = { type: 'spring' as const, stiffness: 340, damping: 32 }
 // Component
 // ---------------------------------------------------------------------------
 export interface WeeklyCalendarCarouselProps {
+  events: EventItem[]
   onTableClick?: (event: EventItem) => void
 }
 
-export function WeeklyCalendarCarousel({ onTableClick }: WeeklyCalendarCarouselProps) {
+export function WeeklyCalendarCarousel({ events, onTableClick }: WeeklyCalendarCarouselProps) {
   const [dayIdx,   setDayIdx]   = useState(0)
   const [dayDir,   setDayDir]   = useState<1 | -1>(1)
   const [nightIdx, setNightIdx] = useState(0)
@@ -100,7 +101,7 @@ export function WeeklyCalendarCarousel({ onTableClick }: WeeklyCalendarCarouselP
   const stripRef = useRef<HTMLDivElement>(null)
 
   const day        = DAYS[dayIdx]
-  const allEvts    = getEventsForDay(day.dataDay, today)
+  const allEvts    = getEventsForDay(events, day.dataDay, today)
   const showNights = groupByDate(allEvts)
   const night      = showNights[nightIdx] ?? null
   const activeEvt  = night?.evts[slotIdx] ?? null
@@ -158,7 +159,7 @@ export function WeeklyCalendarCarousel({ onTableClick }: WeeklyCalendarCarouselP
       >
         {DAYS.map((d, idx) => {
           const active     = idx === dayIdx
-          const dayEvts    = getEventsForDay(d.dataDay, today)
+          const dayEvts    = getEventsForDay(events, d.dataDay, today)
           const nights     = groupByDate(dayEvts)
           const nextNight  = nights[0]
           // Parse the ISO date string (YYYY-MM-DD) directly to avoid

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import crypto from 'node:crypto'
 import { getSql } from '@/lib/db'
-import { sendBookingConfirmation } from '@/lib/email'
+import { sendBookingConfirmation, sendTicketConfirmation } from '@/lib/email'
+import { markOrderFailed, markOrderPaid } from '@/lib/orders'
 
 function isSignatureValid(rawBody: string, header: string | null, secret: string): boolean {
   if (!header) return false
@@ -93,13 +94,29 @@ export async function POST(request: Request) {
         // Payment already recorded as confirmed — don't fail the webhook over email delivery.
         console.error('Failed to send booking confirmation email:', err)
       }
+    } else {
+      // Not a reservation deposit — try the shop/tickets orders table.
+      // Clover's checkout previously only fulfilled bookings, meaning a
+      // Clover-paid shop or ticket order never got marked paid at all.
+      const order = await markOrderPaid(checkoutSessionId, null)
+      if (order?.event_id) {
+        try {
+          await sendTicketConfirmation(order)
+        } catch (err) {
+          console.error('Failed to send ticket confirmation email:', err)
+        }
+      }
     }
   } else if (status.toUpperCase() === 'DECLINED') {
-    await sql`
+    const rows = (await sql`
       UPDATE bookings
       SET status = 'failed'
       WHERE checkout_session_id = ${checkoutSessionId} AND status = 'pending_deposit'
-    `
+      RETURNING checkout_session_id
+    `) as { checkout_session_id: string }[]
+    if (rows.length === 0) {
+      await markOrderFailed(checkoutSessionId)
+    }
   }
 
   return NextResponse.json({ received: true })

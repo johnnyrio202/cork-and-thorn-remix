@@ -71,6 +71,31 @@ export async function sendBookingConfirmation(booking: {
   })
 }
 
+export async function sendTicketConfirmation(order: {
+  checkout_session_id: string
+  customer_email: string | null
+  line_items: { name: string; price: number; quantity: number }[]
+  amount_total_cents: number
+}): Promise<void> {
+  if (!order.customer_email) return
+  const item = order.line_items[0]
+  if (!item) return
+
+  await getResend().emails.send({
+    from: 'Cork & Thorn <onboarding@resend.dev>',
+    to: order.customer_email,
+    subject: `Your tickets: ${item.name}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+        <h2>You're in.</h2>
+        <p><strong>${item.quantity}x ${item.name}</strong></p>
+        <p>Total charged: $${(order.amount_total_cents / 100).toFixed(2)}</p>
+        <p style="color: #888; font-size: 12px;">Confirmation ref: ${order.checkout_session_id}</p>
+      </div>
+    `,
+  })
+}
+
 const INQUIRY_LABELS: Record<InquiryType, string> = {
   party: 'private party inquiry',
   catering: 'catering inquiry',
