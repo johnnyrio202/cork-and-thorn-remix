@@ -12,7 +12,7 @@ Reservations,Guest post-visit survey,Yes — 192 completed responses on the old 
 Reservations,Waitlist / walk-in management,Yes — dedicated Waitlist & Tables module,Not built,Not Started,Medium,Staff dashboard has a live floor plan but no formal waitlist queue yet
 Inquiries CRM,Private Party / Group inquiries,Yes,"Page exists (static) with no backend — form has no submit handler",Not Started (UI only),Next phase,User confirmed the full SpotHopper-style inquiry set for v1
 Inquiries CRM,Catering inquiries,Yes,No page exists,Not Started,Next phase,—
-Inquiries CRM,Online order inquiries (to-go),"Yes — commission-free, via Stripe Connect",/shop page exists (static) with no backend,Not Started,Next phase,Stripe backup/inactive module authorized but not yet built
+Inquiries CRM,Online order inquiries (to-go / merch),"Yes — commission-free, via Stripe Connect","Built & Live — /shop has a real cart and checkout, on Clover by default with a verified Stripe backup path",Built & Live,Done,"Correction to this doc's earlier note: /shop's checkout was already fully wired before this session, not static — the earlier ""no backend"" read only checked shop/page.tsx directly and missed that add-to-cart/checkout live in separate shared components"
 Inquiries CRM,Event ticket sales,Yes,Events exist as staff-editable CMS content only — no purchase flow,Partial,Next phase,—
 Inquiries CRM,Job applications,Yes — 200 applications on file (old platform),No page exists,Not Started,Next phase,—
 Inquiries CRM,General contact form,Yes,No page exists,Not Started,Next phase,—
