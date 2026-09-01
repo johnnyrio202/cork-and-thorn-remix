@@ -119,3 +119,20 @@ CREATE TABLE IF NOT EXISTS campaign_sms_sends (
 );
 CREATE INDEX IF NOT EXISTS campaign_sms_sends_queue_idx
   ON campaign_sms_sends (status) WHERE status = 'queued';
+
+-- Shop checkout orders. provider distinguishes Stripe (the backup module
+-- added 2026-09-01) from Clover (the active rail, which today doesn't
+-- write an order row at all — this table is provider-tagged so Clover
+-- could adopt it later without a migration, but that wiring isn't done).
+CREATE TABLE IF NOT EXISTS orders (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  provider text NOT NULL,
+  checkout_session_id text UNIQUE NOT NULL,
+  status text NOT NULL DEFAULT 'pending',
+  line_items jsonb NOT NULL,
+  amount_total_cents int NOT NULL,
+  customer_email text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  paid_at timestamptz
+);
+CREATE INDEX IF NOT EXISTS orders_status_idx ON orders (status);
