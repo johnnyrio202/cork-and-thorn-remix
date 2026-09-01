@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { toast } from 'sonner'
+import { RESUME_UPLOADS_ENABLED } from '@/lib/feature-flags'
 
 const positions = [
   'Bartender',
@@ -127,21 +128,23 @@ export function JobApplicationForm() {
             </SelectContent>
           </Select>
         </div>
-        <div className="grid gap-2 sm:col-span-2">
-          <Label htmlFor="j-resume">Resume (PDF or Word, under 5MB)</Label>
-          <Input
-            id="j-resume"
-            type="file"
-            accept=".pdf,.doc,.docx"
-            className="bg-background"
-            onChange={(e) => {
-              const file = e.target.files?.[0]
-              if (file) handleResumeUpload(file)
-            }}
-          />
-          {isUploading && <p className="text-xs text-muted-foreground">Uploading…</p>}
-          {resumeUrl && !isUploading && <p className="text-xs text-muted-foreground">Resume attached ✓</p>}
-        </div>
+        {RESUME_UPLOADS_ENABLED && (
+          <div className="grid gap-2 sm:col-span-2">
+            <Label htmlFor="j-resume">Resume (PDF or Word, under 5MB)</Label>
+            <Input
+              id="j-resume"
+              type="file"
+              accept=".pdf,.doc,.docx"
+              className="bg-background"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) handleResumeUpload(file)
+              }}
+            />
+            {isUploading && <p className="text-xs text-muted-foreground">Uploading…</p>}
+            {resumeUrl && !isUploading && <p className="text-xs text-muted-foreground">Resume attached ✓</p>}
+          </div>
+        )}
         <div className="grid gap-2 sm:col-span-2">
           <Label htmlFor="j-note">Anything else you&apos;d like us to know?</Label>
           <Textarea id="j-note" name="note" rows={4} className="bg-background" />

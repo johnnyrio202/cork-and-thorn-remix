@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { put } from '@vercel/blob'
+import { RESUME_UPLOADS_ENABLED } from '@/lib/feature-flags'
 
 const ALLOWED_TYPES = new Set([
   'application/pdf',
@@ -12,6 +13,10 @@ const MAX_BYTES = 5 * 1024 * 1024
 // app/api/staff/content/upload/route.ts which this otherwise mirrors.
 // Restricted to resume-shaped files/sizes since anyone can call it.
 export async function POST(request: Request) {
+  if (!RESUME_UPLOADS_ENABLED) {
+    return NextResponse.json({ error: 'Resume uploads are not being accepted right now' }, { status: 403 })
+  }
+
   const form = await request.formData().catch(() => null)
   const file = form?.get('file')
   if (!(file instanceof File)) {
