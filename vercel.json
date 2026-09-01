@@ -1,0 +1,6 @@
+{
+  "crons": [
+    { "path": "/api/cron/process-sms-queue", "schedule": "0 12 * * *" },
+    { "path": "/api/cron/sync-resend-contacts", "schedule": "30 12 * * *" }
+  ]
+}
