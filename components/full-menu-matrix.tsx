@@ -3,19 +3,19 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Lock, Zap, Wind, ChevronRight, Wine } from 'lucide-react'
+import { Lock, Zap, Wind, ChevronRight, Wine, Search, X } from 'lucide-react'
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-type Pour = { label: string; price: number; bottlePrice?: number }
-type Item = { name: string; sub?: string; menuDescription?: string; hidePrice?: boolean; pours: Pour[] }
+export type Pour = { label: string; price: number; bottlePrice?: number }
+export type Item = { name: string; sub?: string; menuDescription?: string; hidePrice?: boolean; pours: Pour[] }
 
 // ---------------------------------------------------------------------------
 // Data — OTD prices only, no POS prices
 // ---------------------------------------------------------------------------
 
-const VOL1: Item[] = [
+export const VOL1: Item[] = [
   { name: 'Desert Rose', sub: 'Teremana Blanco, Hibiscus, Fresh Lime/Lemon', menuDescription: 'Floral and bright with a citrus finish.', pours: [{ label: 'Cocktail', price: 20 }] },
   { name: 'Golden Nugget', sub: 'Watermelon Basil Vodka, St-Germain, Guava, Prosecco', menuDescription: 'Fruity and elegant with botanical undertones.', pours: [{ label: 'Cocktail', price: 22 }] },
   { name: 'Indigo Roller', sub: 'McQueen Ultraviolet Gin, Lychee, Lavender & Earl Grey', menuDescription: 'Aromatic with floral complexity and stone fruit notes.', pours: [{ label: 'Cocktail', price: 22 }] },
@@ -24,7 +24,7 @@ const VOL1: Item[] = [
   { name: 'Bellagio Botanist', sub: 'Bombay Sapphire, Campari, Passionfruit, Tonic', menuDescription: 'Sophisticated aperitif with bitter-sweet balance.', pours: [{ label: 'Cocktail', price: 21 }] },
   { name: 'Arts District Mule', sub: "Tito's, Strawberry & Black Pepper, Fever-Tree Ginger Beer", menuDescription: 'Spicy and refreshing with berry undertones.', pours: [{ label: 'Cocktail', price: 19 }] },
 ]
-const VOL2: Item[] = [
+export const VOL2: Item[] = [
   { name: 'Stardust Shadow', sub: 'Ilegal Mezcal, Gran Malo Tamarind, Mango, Habanero', menuDescription: 'Complex and smoky with sweet and spicy layers.', pours: [{ label: 'Cocktail', price: 22 }] },
   { name: 'Whiskey Farmer', sub: 'Frey Ranch Bourbon, Burnt Honey, Muddled Orange & Cherry', menuDescription: 'Bold and warming with caramelized fruit notes.', pours: [{ label: 'Cocktail', price: 28 }] },
   { name: 'Main Street Manhattan', sub: 'Frey Ranch Bottled-in-Bond Rye, Lo-Fi Sweet Vermouth, Clove Bitters', menuDescription: 'Classic and complex with aromatic spice.', pours: [{ label: 'Cocktail', price: 28 }] },
@@ -33,7 +33,7 @@ const VOL2: Item[] = [
   { name: 'Mandalay Heat', sub: "Bumbu Rum, Myers's Dark, Guava, Jalapeño", menuDescription: 'Tropical with a spicy kick and dark fruit depth.', pours: [{ label: 'Cocktail', price: 21 }] },
   { name: 'Tropicana', sub: 'Captain Morgan Spiced, Peach, Black Pepper, Ginger Beer', menuDescription: 'Sweet and zesty with a spiced edge.', pours: [{ label: 'Cocktail', price: 19 }] },
 ]
-const VOL3: Item[] = [
+export const VOL3: Item[] = [
   { name: 'Flamingo Fizz', sub: 'Fresh Lime, Agave, Mint-Hibiscus Syrup, Purrizza', menuDescription: 'Vibrant and floral with bright citrus notes.', pours: [{ label: 'Zero-Proof', price: 12 }] },
   { name: 'Mojave Mule', sub: 'Mango, Fresh Lemon, House Gum Syrup, Ginger Beer', menuDescription: 'Tropical and spicy with refreshing ginger warmth.', pours: [{ label: 'Zero-Proof', price: 14 }] },
   { name: 'Lavender Haze', sub: 'Fresh Lemon, Purrizza, Butterfly Pea Flower Tea Float', menuDescription: 'Floral and aromatic with delicate complexity.', pours: [{ label: 'Zero-Proof', price: 14 }] },
@@ -372,44 +372,70 @@ const HOOKAH_TIER3 = [
 // ---------------------------------------------------------------------------
 // ItemCard
 // ---------------------------------------------------------------------------
-function ItemCard({ item, index, isSecret }: { item: Item; index: number; isSecret?: boolean }) {
+function ItemCard({
+  item,
+  index,
+  isSecret,
+  categoryPath,
+}: {
+  item: Item
+  index: number
+  isSecret?: boolean
+  // Shown as a footer badge — only set by search results, where items from
+  // different categories mix in one grid. Normal category browsing relies
+  // on the section heading above instead, so this stays unset there.
+  categoryPath?: string
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0  }}
-      transition={{ duration: 0.24, delay: index * 0.035, ease: 'easeOut' }}
-      className={`flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-6 rounded-xl border px-5 py-4 md:px-6 md:py-5 transition-colors duration-200 ${
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.24, delay: index * 0.03, ease: 'easeOut' }}
+      className={`group relative flex flex-col overflow-hidden rounded-xl border p-5 md:p-6 transition-transform duration-300 hover:-translate-y-1 ${
         isSecret
           ? 'border-primary/20 bg-primary/[0.04] hover:border-primary/40'
-          : 'border-white/[0.06] bg-white/[0.02] hover:border-primary/20'
+          : 'border-white/[0.06] bg-gradient-to-br from-[#12151c] to-[#1a1e26] hover:border-primary/20'
       }`}
     >
-      <div className="flex-1 min-w-0">
-        <h4 className="font-sans text-sm md:text-base text-white font-medium leading-snug mb-1">{item.name}</h4>
-        {item.sub && <p className="text-xs md:text-sm text-white/30 leading-relaxed mb-1.5">{item.sub}</p>}
-        {item.menuDescription && <p className="text-xs md:text-sm text-primary/60 italic leading-relaxed">{item.menuDescription}</p>}
-      </div>
-      {!item.hidePrice && <div className="flex items-center gap-6 sm:gap-8 shrink-0">
-        {item.pours.map((pour, i) => (
-          <div key={i} className="flex items-end gap-4 sm:gap-5">
-            {/* Pour price */}
-            <div className="text-right">
-              <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-1">{pour.label}</p>
-              <p className="text-sm md:text-base text-primary font-semibold">${pour.price}</p>
-            </div>
-            {/* Bottle price — same size, separated by a faint divider */}
-            {pour.bottlePrice && (
-              <>
-                <div className="w-px h-8 bg-white/10 self-end mb-0.5" />
-                <div className="text-right">
-                  <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-1">Bottle</p>
-                  <p className="text-sm md:text-base text-primary font-semibold">${pour.bottlePrice}</p>
+      {/* Gold top-edge reveal on hover */}
+      <span
+        aria-hidden="true"
+        className="absolute inset-x-0 top-0 h-[3px] origin-left scale-x-0 bg-primary transition-transform duration-300 group-hover:scale-x-100"
+      />
+
+      <h4 className="font-sans text-sm md:text-base text-white font-medium leading-snug mb-1.5">{item.name}</h4>
+      {item.sub && <p className="text-xs md:text-sm italic text-white/35 leading-relaxed mb-1.5">{item.sub}</p>}
+      {item.menuDescription && (
+        <p className="text-xs md:text-sm text-primary/60 leading-relaxed mb-4">{item.menuDescription}</p>
+      )}
+
+      {(!item.hidePrice || categoryPath) && (
+        <div className="mt-auto flex flex-wrap items-end justify-between gap-3 border-t border-white/[0.06] pt-3.5">
+          {!item.hidePrice && (
+            <div className="flex flex-wrap items-end gap-4">
+              {item.pours.map((pour, i) => (
+                <div key={i} className="flex items-end gap-3">
+                  <div>
+                    <p className="text-[9px] uppercase tracking-[0.15em] text-white/30 mb-0.5">{pour.label}</p>
+                    <p className="text-sm md:text-base text-primary font-semibold">${pour.price}</p>
+                  </div>
+                  {pour.bottlePrice && (
+                    <div>
+                      <p className="text-[9px] uppercase tracking-[0.15em] text-white/30 mb-0.5">Bottle</p>
+                      <p className="text-sm md:text-base text-primary font-semibold">${pour.bottlePrice}</p>
+                    </div>
+                  )}
                 </div>
-              </>
-            )}
-          </div>
-        ))}
-      </div>}
+              ))}
+            </div>
+          )}
+          {categoryPath && (
+            <span className="ml-auto shrink-0 rounded-sm bg-primary/10 px-2 py-1 font-sans text-[10px] uppercase tracking-[0.1em] text-primary/80">
+              {categoryPath}
+            </span>
+          )}
+        </div>
+      )}
     </motion.div>
   )
 }
@@ -578,6 +604,55 @@ function getItems(tier1: Tier1Val, tier2: string, groupId: string): Item[] {
   return []
 }
 
+// getItems() returns [] for hookah (its content is mostly bespoke JSX, not
+// Item[] data — see ContentGroup below) except Signature Bowls, which
+// really is Item[] and belongs in the searchable index.
+function getSearchableItems(tier1: Tier1Val, tier2: string, groupId: string): Item[] {
+  if (tier1 === 'exhales' && tier2 === 'hookah' && groupId === 'bowls') return HOOKAH_BOWLS
+  return getItems(tier1, tier2, groupId)
+}
+
+function matchesQuery(item: Item, query: string) {
+  if (!query) return true
+  const q = query.toLowerCase()
+  return (
+    item.name.toLowerCase().includes(q) ||
+    !!item.sub?.toLowerCase().includes(q) ||
+    !!item.menuDescription?.toLowerCase().includes(q)
+  )
+}
+
+// Flat, searchable index of every real menu item, built once at module
+// load. Session/Upgrades and the Flavor Library aren't priced item lists
+// (they're bespoke pricing tiers / reference tags) so they're excluded,
+// same as the /menu-test prototype.
+type SearchEntry = { item: Item; path: string }
+
+function buildSearchIndex(): SearchEntry[] {
+  const pairs: { tier1: Tier1Val; tier2: string }[] = [
+    { tier1: 'sips', tier2: 'cocktails' },
+    { tier1: 'sips', tier2: 'spirits' },
+    { tier1: 'sips', tier2: 'wine' },
+    { tier1: 'sips', tier2: 'bubbles' },
+    { tier1: 'sips', tier2: 'beer' },
+    { tier1: 'exhales', tier2: 'hookah' },
+    { tier1: 'exhales', tier2: 'cigars' },
+  ]
+  const entries: SearchEntry[] = []
+  for (const { tier1, tier2 } of pairs) {
+    const tier1Label = tier1 === 'sips' ? 'Sips' : 'Exhales'
+    const tier2Label = [...SIPS_TIER2, ...EXHALES_TIER2].find((x) => x.id === tier2)?.label ?? tier2
+    for (const group of getGroups(tier1, tier2)) {
+      const items = getSearchableItems(tier1, tier2, group.id)
+      const path = group.heading === tier2Label ? `${tier1Label} · ${tier2Label}` : `${tier1Label} · ${tier2Label} · ${group.heading}`
+      for (const item of items) entries.push({ item, path })
+    }
+  }
+  return entries
+}
+
+const SEARCH_INDEX = buildSearchIndex()
+
 function ContentPanel({ tier1, tier2 }: { tier1: Tier1Val; tier2: string }) {
   const groups = getGroups(tier1, tier2)
   const isHookah = tier1 === 'exhales' && tier2 === 'hookah'
@@ -674,7 +749,7 @@ function ContentGroup({
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.22, delay: 0.12 + i * 0.06 }}
-                    className="rounded-xl border border-white/[0.07] bg-white/[0.02] px-5 py-4 flex flex-col gap-1"
+                    className="rounded-xl border border-white/[0.07] bg-white/[0.02] px-5 py-4 flex flex-col gap-1 transition-colors duration-300 hover:border-primary/25"
                   >
                     <p className="font-sans text-base font-bold text-white">${r.price}</p>
                     <p className="font-sans text-sm text-white/70">{r.name}</p>
@@ -697,7 +772,7 @@ function ContentGroup({
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2, delay: 0.24 + i * 0.05 }}
-                    className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-white/[0.02] px-5 py-3.5"
+                    className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-white/[0.02] px-5 py-3.5 transition-colors duration-300 hover:border-primary/25"
                   >
                     <div>
                       <p className="font-sans text-sm font-medium text-white">{u.name}</p>
@@ -724,7 +799,7 @@ function ContentGroup({
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2, delay: 0.32 + i * 0.04 }}
-                    className="flex items-start justify-between gap-4 rounded-lg border border-white/[0.06] bg-white/[0.02] px-5 py-3.5"
+                    className="flex items-start justify-between gap-4 rounded-lg border border-white/[0.06] bg-white/[0.02] px-5 py-3.5 transition-colors duration-300 hover:border-primary/25"
                   >
                     <div className="min-w-0">
                       <p className="font-sans text-sm font-medium text-white">{a.name}</p>
@@ -772,7 +847,7 @@ function ContentGroup({
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, delay: brandIdx * 0.08 }}
-                className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-5 py-4 md:px-6 md:py-5"
+                className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-5 py-4 md:px-6 md:py-5 transition-colors duration-300 hover:border-primary/25"
               >
                 <h4 className="font-sans text-xs uppercase tracking-[0.22em] text-primary/80 font-semibold mb-3">
                   {brand.label}
@@ -792,7 +867,7 @@ function ContentGroup({
           </div>
 
         ) : (
-          <div className="space-y-2.5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5">
             {items.map((item, idx) => (
               <ItemCard key={`${item.name}-${idx}`} item={item} index={idx} />
             ))}
@@ -820,6 +895,9 @@ export function FullMenuMatrix() {
 
   const [tier1, setTier1] = useState<Tier1Val | null>(initT1)
   const [tier2, setTier2] = useState<string | null>(initT2)
+  const [query, setQuery] = useState('')
+
+  const searchResults = query ? SEARCH_INDEX.filter((e) => matchesQuery(e.item, query)) : []
 
   // Determine which tier is the "active focus" — i.e. what the user
   // needs to select next. This drives which tier renders below.
@@ -849,6 +927,34 @@ export function FullMenuMatrix() {
 
   return (
     <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-10 md:py-14">
+
+      {/* Search — always available, finds items across the whole menu */}
+      <div className="mx-auto mb-8 max-w-md">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search the full menu — name or ingredient…"
+            className="w-full rounded-full border border-white/[0.08] bg-white/[0.03] py-2.5 pl-11 pr-10 font-sans text-sm text-white placeholder:text-white/30 focus:border-primary/50 focus:outline-none"
+          />
+          {query && (
+            <button
+              onClick={() => setQuery('')}
+              aria-label="Clear search"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {query ? (
+        <SearchResults results={searchResults} query={query} />
+      ) : (
+      <>
 
       {/* Breadcrumb */}
       <Breadcrumb items={crumbs} />
@@ -986,6 +1092,32 @@ export function FullMenuMatrix() {
         )}
       </AnimatePresence>
 
+      </>
+      )}
+
+    </div>
+  )
+}
+
+function SearchResults({ results, query }: { results: SearchEntry[]; query: string }) {
+  if (results.length === 0) {
+    return (
+      <p className="py-16 text-center font-sans text-sm text-white/40">
+        Nothing matches &ldquo;{query}&rdquo; — try a different name or ingredient.
+      </p>
+    )
+  }
+
+  return (
+    <div>
+      <p className="mb-6 text-center font-sans text-[11px] uppercase tracking-[0.15em] text-white/25">
+        {results.length} {results.length === 1 ? 'result' : 'results'}
+      </p>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5">
+        {results.map(({ item, path }, idx) => (
+          <ItemCard key={`${path}-${item.name}-${idx}`} item={item} index={idx} categoryPath={path} />
+        ))}
+      </div>
     </div>
   )
 }
