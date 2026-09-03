@@ -29,8 +29,8 @@ export default function PrivatePartiesPage() {
       />
 
       <section className="px-4 pb-12 md:pb-20">
-        <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-2 lg:items-start">
-          <div className="space-y-8">
+        <div className="mx-auto grid max-w-4xl gap-10 lg:grid-cols-2 lg:items-start">
+          <div className="space-y-6">
             <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-border">
               <Image
                 src="/images/parties.png"
@@ -41,31 +41,23 @@ export default function PrivatePartiesPage() {
               />
             </div>
             <div>
-              <h2 className="font-serif text-2xl text-foreground md:text-3xl">
+              <h2 className="font-serif text-lg text-foreground md:text-xl">
                 {'What\u2019s Included'}
               </h2>
-              <ul className="mt-6 space-y-3">
+              <ul className="mt-4 space-y-2.5">
                 {perks.map((perk) => (
                   <li key={perk} className="flex items-start gap-3">
                     <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
                       <Check className="h-3 w-3" />
                     </span>
-                    <span className="leading-relaxed text-muted-foreground">{perk}</span>
+                    <span className="text-sm leading-relaxed text-muted-foreground">{perk}</span>
                   </li>
                 ))}
               </ul>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border bg-card p-6 md:p-8">
-            <h2 className="font-serif text-2xl text-foreground md:text-3xl">Request a Date</h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Tell us about your event and our team will reach out within 24 hours with availability and a custom quote.
-            </p>
-            <div className="mt-6">
-              <PartyInquiryForm />
-            </div>
-          </div>
+          <PartyInquiryForm />
         </div>
       </section>
     </main>

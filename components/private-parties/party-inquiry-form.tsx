@@ -78,7 +78,7 @@ export function PartyInquiryForm() {
       onSubmit={handleSubmit}
       className="rounded-2xl border border-border bg-card p-6 sm:p-8"
     >
-      <h2 className="font-heading text-3xl tracking-wide">Tell Us About Your Event</h2>
+      <h2 className="font-heading text-lg tracking-wide md:text-xl">Tell Us About Your Event</h2>
       <p className="mt-1 text-sm text-muted-foreground">
         Share the details and our events team will build a bespoke proposal.
       </p>
