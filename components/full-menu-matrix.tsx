@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lock, Zap, Wind, ChevronRight, Wine, Search, X } from 'lucide-react'
@@ -653,14 +653,26 @@ function buildSearchIndex(): SearchEntry[] {
 
 const SEARCH_INDEX = buildSearchIndex()
 
-function ContentPanel({ tier1, tier2 }: { tier1: Tier1Val; tier2: string }) {
-  const groups = getGroups(tier1, tier2)
+function ContentPanel({
+  tier1,
+  tier2,
+  activeTier3,
+}: {
+  tier1: Tier1Val
+  tier2: string
+  // 'all' shows every sub-group stacked (the default on entering a
+  // category — zero extra clicks). Any other value is a real filter: only
+  // that one sub-group renders, not just a scroll target.
+  activeTier3: string
+}) {
+  const allGroups = getGroups(tier1, tier2)
+  const groups = activeTier3 === 'all' ? allGroups : allGroups.filter((g) => g.id === activeTier3)
   const isHookah = tier1 === 'exhales' && tier2 === 'hookah'
 
   return (
     <AnimatePresence mode="wait">
       <motion.div
-        key={`${tier1}:${tier2}`}
+        key={`${tier1}:${tier2}:${activeTier3}`}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -6 }}
@@ -690,9 +702,7 @@ function ContentGroup({
   const tier3 = group.id
 
   return (
-    // scroll-mt so the jump-nav pills land the section below the sticky
-    // tier1/tier2/tier3 pill rows above, not flush under them.
-    <div id={group.id} className="scroll-mt-28">
+    <div id={group.id}>
       {group.description && (
         <p className="font-sans text-sm md:text-base text-white/55 leading-relaxed text-center max-w-sm mx-auto mb-8">
           {group.description}
@@ -895,6 +905,10 @@ export function FullMenuMatrix() {
 
   const [tier1, setTier1] = useState<Tier1Val | null>(initT1)
   const [tier2, setTier2] = useState<string | null>(initT2)
+  // 'all' = every sub-group shown stacked (the default — zero extra
+  // clicks to see everything in a category). Anything else is a real
+  // filter to just that one sub-group, not a scroll target.
+  const [tier3, setTier3] = useState<string>(initT3 ?? 'all')
   const [query, setQuery] = useState('')
 
   // Match against the item itself OR its category path — otherwise
@@ -910,25 +924,20 @@ export function FullMenuMatrix() {
   const needsTier3 =
     tier2 === 'cocktails' || tier2 === 'spirits' || tier2 === 'wine' || tier2 === 'hookah'
 
-  // A deep link with t3 (e.g. from an old link that still carries it)
-  // scrolls straight to that sub-group's section once it's rendered,
-  // instead of gating content behind an extra click.
-  useEffect(() => {
-    if (!initT3) return
-    const el = document.getElementById(initT3)
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [initT3])
-
-  function scrollToGroup(id: string) {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-
   // Breadcrumb trail
   const crumbs: { label: string; onClick: () => void }[] = []
-  if (tier1) crumbs.push({ label: tier1 === 'sips' ? 'Sips' : 'Exhales', onClick: () => { setTier1(null); setTier2(null) } })
+  if (tier1) crumbs.push({ label: tier1 === 'sips' ? 'Sips' : 'Exhales', onClick: () => { setTier1(null); setTier2(null); setTier3('all') } })
   if (tier2) {
     const t2label = [...SIPS_TIER2, ...EXHALES_TIER2].find(x => x.id === tier2)?.label ?? tier2
-    crumbs.push({ label: t2label, onClick: () => setTier2(null) })
+    crumbs.push({ label: t2label, onClick: () => { setTier2(null); setTier3('all') } })
+  }
+  if (needsTier3 && tier3 !== 'all') {
+    const t3label =
+      tier2 === 'cocktails' ? (COCKTAIL_VOLS.find(x => x.id === tier3)?.label ?? tier3) :
+      tier2 === 'spirits'   ? (SPIRIT_CATS.find(x => x.id === tier3)?.label ?? tier3) :
+      tier2 === 'wine'      ? (WINE_CATS.find(x => x.id === tier3)?.label ?? tier3) :
+      tier2 === 'hookah'    ? (HOOKAH_TIER3.find(x => x.id === tier3)?.label ?? tier3) : tier3
+    crumbs.push({ label: t3label, onClick: () => setTier3('all') })
   }
 
   return (
@@ -980,6 +989,7 @@ export function FullMenuMatrix() {
               if (tier1 === v) return
               setTier1(v)
               setTier2(null)
+              setTier3('all')
             }}>
               {v === 'sips'
                 ? <><Wine className="w-4 h-4" /> Sips</>
@@ -1013,6 +1023,7 @@ export function FullMenuMatrix() {
                     onClick={() => {
                       if (tier2 === opt.id) return
                       setTier2(opt.id)
+                      setTier3('all')
                     }}
                   >
                     {opt.label}
@@ -1024,8 +1035,9 @@ export function FullMenuMatrix() {
         )}
       </AnimatePresence>
 
-      {/* ── Tier 3: jump-nav — sub-groups all render below already, these
-          just scroll to one. Not a selection gate anymore. */}
+      {/* ── Tier 3: real filter chips — "All" (default) shows every
+          sub-group stacked; picking one narrows the view to just that
+          sub-group, it doesn't just scroll to it. */}
       <AnimatePresence>
         {tier1 && tier2 && needsTier3 && (
           <motion.div
@@ -1039,8 +1051,11 @@ export function FullMenuMatrix() {
             <div className="mt-5 md:mt-6">
               <div className="mb-4 h-px bg-gradient-to-r from-transparent via-white/[0.05] to-transparent" />
               <div className="flex flex-wrap gap-2 md:gap-2.5 justify-center">
+                <Pill active={tier3 === 'all'} size="sm" onClick={() => setTier3('all')}>
+                  All
+                </Pill>
                 {tier2 === 'cocktails' && COCKTAIL_VOLS.map((p) => (
-                  <Pill key={p.id} active={false} size="sm" onClick={() => scrollToGroup(p.id)}>
+                  <Pill key={p.id} active={tier3 === p.id} size="sm" onClick={() => setTier3(p.id)}>
                     {p.label} {p.sub && <span className="text-[10px] opacity-70">— {p.sub}</span>}
                   </Pill>
                 ))}
@@ -1049,7 +1064,7 @@ export function FullMenuMatrix() {
                     {/* Row 1: Vodka · Tequila · Gin · Rum */}
                     <div className="flex flex-wrap justify-center gap-2 md:gap-2.5">
                       {SPIRIT_CATS.slice(0, 4).map((c) => (
-                        <Pill key={c.id} active={false} size="sm" onClick={() => scrollToGroup(c.id)}>
+                        <Pill key={c.id} active={tier3 === c.id} size="sm" onClick={() => setTier3(c.id)}>
                           {c.label}
                         </Pill>
                       ))}
@@ -1057,7 +1072,7 @@ export function FullMenuMatrix() {
                     {/* Row 2: Whiskey & Bourbon · Cognac & Scotch · Liqueurs — always on the same line */}
                     <div className="flex flex-wrap justify-center gap-2 md:gap-2.5">
                       {SPIRIT_CATS.slice(4).map((c) => (
-                        <Pill key={c.id} active={false} size="sm" onClick={() => scrollToGroup(c.id)}>
+                        <Pill key={c.id} active={tier3 === c.id} size="sm" onClick={() => setTier3(c.id)}>
                           {c.label}
                         </Pill>
                       ))}
@@ -1065,12 +1080,12 @@ export function FullMenuMatrix() {
                   </div>
                 )}
                 {tier2 === 'wine' && WINE_CATS.map((c) => (
-                  <Pill key={c.id} active={false} size="sm" onClick={() => scrollToGroup(c.id)}>
+                  <Pill key={c.id} active={tier3 === c.id} size="sm" onClick={() => setTier3(c.id)}>
                     {c.label}
                   </Pill>
                 ))}
                 {tier2 === 'hookah' && HOOKAH_TIER3.map((c) => (
-                  <Pill key={c.id} active={false} size="sm" onClick={() => scrollToGroup(c.id)}>
+                  <Pill key={c.id} active={tier3 === c.id} size="sm" onClick={() => setTier3(c.id)}>
                     {c.label}
                   </Pill>
                 ))}
@@ -1093,6 +1108,7 @@ export function FullMenuMatrix() {
             <ContentPanel
               tier1={tier1}
               tier2={tier2}
+              activeTier3={needsTier3 ? tier3 : 'all'}
             />
           </motion.div>
         )}
