@@ -897,7 +897,13 @@ export function FullMenuMatrix() {
   const [tier2, setTier2] = useState<string | null>(initT2)
   const [query, setQuery] = useState('')
 
-  const searchResults = query ? SEARCH_INDEX.filter((e) => matchesQuery(e.item, query)) : []
+  // Match against the item itself OR its category path — otherwise
+  // searching a category name (e.g. "tequila", "spirits") returns nothing,
+  // since individual item names/ingredients rarely repeat their own
+  // category's name.
+  const searchResults = query
+    ? SEARCH_INDEX.filter((e) => matchesQuery(e.item, query) || e.path.toLowerCase().includes(query.toLowerCase()))
+    : []
 
   // Determine which tier is the "active focus" — i.e. what the user
   // needs to select next. This drives which tier renders below.
