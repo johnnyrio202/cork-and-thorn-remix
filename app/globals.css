@@ -7,7 +7,7 @@
 @theme inline {
   --font-heading: var(--font-lora), 'Georgia', serif;
   --font-script: var(--font-pinyon), 'Georgia', serif;
-  --font-sans: var(--font-lora), 'Georgia', serif;
+  --font-sans: var(--font-roboto), 'Helvetica Neue', Arial, sans-serif;
   --font-mono: var(--font-geist-mono), 'Geist Mono Fallback';
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);

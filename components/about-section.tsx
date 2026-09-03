@@ -51,13 +51,13 @@ export function AboutSection() {
   return (
     <section className="relative z-10 w-full spacing-fluid bg-[#0B111B] pl-[45px] pr-[29px] pb-0 -mt-[16vh] md:mt-0">
       <div className="max-w-4xl mx-auto">
-        <h2 className="font-sans text-primary text-xl sm:text-2xl md:text-3xl mb-16 md:mb-[63px] drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] text-center">
+        <h2 className="font-sans text-primary text-lg sm:text-xl md:text-2xl mb-8 md:mb-10 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] text-center">
           a Vegas curated Social
         </h2>
 
         <div
           ref={containerRef}
-          className="relative overflow-hidden rounded-2xl border border-primary/20 shadow-[0_0_50px_rgba(0,0,0,0.6)] mb-8 md:mb-12"
+          className="relative overflow-hidden rounded-2xl border border-primary/20 shadow-[0_0_50px_rgba(0,0,0,0.6)] mb-8 md:mb-10"
         >
           <video
             ref={videoRef}

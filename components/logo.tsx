@@ -19,8 +19,7 @@ export function Logo({ className = '' }: LogoProps) {
         alt="Cork and Thorn"
         height={160}
         width={800}
-        className="h-24 w-auto object-contain drop-shadow-[0_0_20px_rgba(226,182,54,0.6)] sm:h-32 lg:h-40"
-        priority
+        className="h-9 w-auto object-contain drop-shadow-[0_0_10px_rgba(226,182,54,0.5)]"
       />
     </Link>
   )

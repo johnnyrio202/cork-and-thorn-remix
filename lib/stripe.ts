@@ -24,7 +24,7 @@ function randomLabelSuffix(): string {
 // never trusts a price the client sends — same invariant as
 // lib/clover.ts's createHostedCheckoutSession. Returns the same
 // {href, checkoutSessionId} shape Clover does, so /api/checkout can pick
-// either provider without the caller (app-shell-header.tsx) knowing which.
+// either provider without the caller (app-shell-nav-bar.tsx) knowing which.
 export async function createStripeCheckoutSession(
   lines: CartLineInput[],
   siteUrl: string,

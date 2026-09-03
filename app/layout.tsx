@@ -4,8 +4,7 @@ import type { Metadata, Viewport } from 'next'
 import { Lora, Pinyon_Script, Geist_Mono, Roboto } from 'next/font/google'
 import './globals.css'
 import { SiteFooter } from '@/components/site-footer'
-import { AppShellHeader } from '@/components/app-shell-header'
-import { AppShellNav } from '@/components/app-shell-nav'
+import { AppShellNavBar } from '@/components/app-shell-nav-bar'
 import { CartProvider } from '@/components/cart-provider'
 import { VipProvider } from '@/components/vip-provider'
 import { Toaster } from '@/components/ui/sonner'
@@ -77,12 +76,9 @@ export default function RootLayout({
         <ClerkProvider afterSignOutUrl="/menu">
           <VipProvider>
             <CartProvider>
-              <AppShellHeader />
-              <div className="pb-[calc(5rem+env(safe-area-inset-bottom))]">
-                {children}
-              </div>
+              <AppShellNavBar />
+              {children}
               <SiteFooter />
-              <AppShellNav />
               <Toaster position="top-center" />
             </CartProvider>
           </VipProvider>
