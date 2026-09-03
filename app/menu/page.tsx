@@ -23,29 +23,29 @@ export default function MenuPage() {
               'linear-gradient(90deg, transparent, rgba(226,182,54,0.45) 50%, transparent)',
           }}
         />
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-12 md:pt-10 md:pb-16 text-center">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-10 md:pt-8 md:pb-12 text-center">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-white/40 hover:text-primary transition-colors duration-200 mb-8 group justify-center"
+            className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-white/40 hover:text-primary transition-colors duration-200 mb-6 group justify-center"
           >
             <ArrowLeft className="w-3.5 h-3.5 transition-transform duration-200 group-hover:-translate-x-0.5" />
             Cork &amp; Thorn
           </Link>
 
-          <p className="font-sans text-xs uppercase tracking-[0.35em] text-primary/70 mb-4">
+          <p className="font-sans text-xs uppercase tracking-[0.35em] text-primary/70 mb-3">
             The Midnight Garden
           </p>
-          <h1 className="font-sans text-5xl sm:text-6xl md:text-7xl text-white leading-none tracking-tight mb-4">
+          <h1 className="font-sans text-2xl sm:text-3xl md:text-4xl text-white leading-tight tracking-tight mb-4">
             Sips &amp; Exhales
           </h1>
 
-          <p className="mt-6 mx-auto max-w-2xl font-sans text-sm md:text-base text-white/60 leading-relaxed text-pretty">
+          <p className="mt-4 mx-auto max-w-2xl font-sans text-sm text-white/60 leading-relaxed text-pretty">
             Every pour, bowl, and bottle here is built around one promise: an
             exceptional experience with nothing hidden. We take pride in the
             craft, the hospitality, and the honesty behind it.
           </p>
 
-          <p className="mt-4 mx-auto max-w-2xl font-sans text-sm md:text-base text-white/75 leading-relaxed text-pretty">
+          <p className="mt-3 mx-auto max-w-2xl font-sans text-sm text-white/75 leading-relaxed text-pretty">
             <span className="text-primary font-medium block">20% auto gratuity — tax and gratuity is already applied.</span>
             No surprise line items, no math at the end of the night — what you see is what you pay. Explore our Seasonal Craft Menu below.
           </p>

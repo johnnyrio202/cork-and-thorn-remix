@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Lock, Zap, Wind, Cigarette, ChevronRight, Wine } from 'lucide-react'
+import { Lock, Zap, Wind, ChevronRight, Wine } from 'lucide-react'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -431,9 +431,9 @@ function Pill({
   isSecret?: boolean
 }) {
   const sizeClass =
-    size === 'lg' ? 'px-8 py-3.5 md:px-12 md:py-4 text-sm md:text-base tracking-[0.22em]' :
-    size === 'md' ? 'px-5 py-2.5 md:px-7 md:py-3 text-xs md:text-sm tracking-[0.18em]'  :
-                   'px-4 py-2 md:px-5 md:py-2 text-xs tracking-[0.12em]'
+    size === 'lg' ? 'px-6 py-2.5 md:px-8 md:py-3 text-xs md:text-sm tracking-[0.2em]' :
+    size === 'md' ? 'px-4 py-2 md:px-5 md:py-2.5 text-xs tracking-[0.16em]'  :
+                   'px-3.5 py-1.5 md:px-4 md:py-2 text-[11px] tracking-[0.12em]'
 
   return (
     <motion.button
@@ -479,10 +479,8 @@ function Pill({
 // ---------------------------------------------------------------------------
 function Breadcrumb({
   items,
-  onSelect,
 }: {
   items: { label: string; onClick: () => void }[]
-  onSelect: (idx: number) => void
 }) {
   if (items.length === 0) return null
   return (
@@ -491,7 +489,7 @@ function Breadcrumb({
         <span key={idx} className="flex items-center gap-1.5">
           {idx > 0 && <ChevronRight className="w-3 h-3 text-white/20" />}
           <button
-            onClick={() => { item.onClick(); onSelect(idx) }}
+            onClick={item.onClick}
             className="text-[11px] uppercase tracking-[0.18em] text-white/35 hover:text-primary transition-colors duration-200"
           >
             {item.label}
@@ -505,99 +503,139 @@ function Breadcrumb({
 // ---------------------------------------------------------------------------
 // Content panel
 // ---------------------------------------------------------------------------
-function ContentPanel({ tier1, tier2, tier3 }: { tier1: Tier1Val; tier2: string; tier3: string }) {
-  let items: Item[] = []
-  let heading = ''
-  let description: string | null = null
-  let note: string | null = null
+// A "group" is one tier3 sub-section (e.g. a cocktail volume, a spirit
+// category). Categories that don't have a tier3 (Bubbles/Beer/Cigars)
+// still produce a single-element group array, so ContentPanel always
+// renders a uniform list of sections — no more gating on a selected tier3.
+type Group = { id: string; heading: string; description?: string; note?: string }
 
+function getGroups(tier1: Tier1Val, tier2: string): Group[] {
   if (tier1 === 'sips') {
     if (tier2 === 'cocktails') {
-      const map: Record<string, { label: string; description: string; items: Item[] }> = {
-        vol1: {
-          label: 'Vol 1 — The Blooms',
+      return [
+        {
+          id: 'vol1',
+          heading: 'Vol 1 — The Blooms',
           description: 'Light, floral, and aromatic — built around house-made botanical syrups, fresh citrus, and seasonal fruit. These cocktails open the night with elegance and color.',
-          items: VOL1,
         },
-        vol2: {
-          label: 'Vol 2 — The Roots',
+        {
+          id: 'vol2',
+          heading: 'Vol 2 — The Roots',
           description: 'Inspired by Nevada\'s high desert terroir — earthy heat, burnt honey, and locally distilled spirits. Spirit-forward builds with intentional depth and a warm, smoky edge.',
-          items: VOL2,
         },
-        vol3: {
-          label: 'Vol 3 — The Mock Garden',
+        {
+          id: 'vol3',
+          heading: 'Vol 3 — The Mock Garden',
           description: 'Zero-proof, full experience. House-pressed juices, botanical infusions, and ceremonial teas — crafted with the same care as our full bar program. Clean, complex, and completely satisfying.',
-          items: VOL3,
         },
-      }
-      heading     = map[tier3]?.label ?? ''
-      description = map[tier3]?.description ?? null
-      items       = map[tier3]?.items ?? []
-    } else if (tier2 === 'spirits') {
-      heading = SPIRITS[tier3]?.label ?? ''
-      items   = SPIRITS[tier3]?.items ?? []
-      note = 'All spirits available by the pour or bottle service.'
-    } else if (tier2 === 'wine') {
-      heading = WINE[tier3]?.label ?? ''
-      items   = WINE[tier3]?.items ?? []
-      note = 'Wine selection rotates seasonally. Ask your server for current availability.'
-    } else if (tier2 === 'bubbles') {
-      heading = 'Champagne & Bubbles'
-      items   = BUBBLES
-      note = 'Bottle service includes glassware, ice bucket, and table presentation.'
-    } else if (tier2 === 'beer') {
-      heading = 'Beer'
-      items   = BEER
+      ]
+    }
+    if (tier2 === 'spirits') {
+      return SPIRIT_CATS.map((c) => ({
+        id: c.id,
+        heading: SPIRITS[c.id]?.label ?? c.label,
+        note: 'All spirits available by the pour or bottle service.',
+      }))
+    }
+    if (tier2 === 'wine') {
+      return WINE_CATS.map((c) => ({
+        id: c.id,
+        heading: WINE[c.id]?.label ?? c.label,
+        note: 'Wine selection rotates seasonally. Ask your server for current availability.',
+      }))
+    }
+    if (tier2 === 'bubbles') {
+      return [{ id: 'bubbles', heading: 'Champagne & Bubbles', note: 'Bottle service includes glassware, ice bucket, and table presentation.' }]
+    }
+    if (tier2 === 'beer') {
+      return [{ id: 'beer', heading: 'Beer' }]
     }
   } else {
     if (tier2 === 'hookah') {
-      // All three hookah tiers use bespoke JSX rendering below — no items[] needed.
-      if (tier3 === 'base') {
-        heading = 'Session & Upgrades'
-      } else if (tier3 === 'bowls') {
-        heading = 'Signature Bowls'
-        note = 'Curated flavor combinations — select any as your custom mix.'
-      } else if (tier3 === 'flavors') {
-        heading = 'Flavor Library'
-        note = 'Reference only — flavors are selected when ordering your bowl, not priced separately.'
-      }
-    } else if (tier2 === 'cigars') {
-      heading = 'Cigars'
-      items   = CIGARS
-      note = 'Cut and lit table-side. Ask your server about private reserve selections.'
+      return [
+        { id: 'base', heading: 'Session & Upgrades' },
+        { id: 'bowls', heading: 'Signature Bowls', note: 'Curated flavor combinations — select any as your custom mix.' },
+        { id: 'flavors', heading: 'Flavor Library', note: 'Reference only — flavors are selected when ordering your bowl, not priced separately.' },
+      ]
+    }
+    if (tier2 === 'cigars') {
+      return [{ id: 'cigars', heading: 'Cigars', note: 'Cut and lit table-side. Ask your server about private reserve selections.' }]
     }
   }
+  return []
+}
 
-  const key = `${tier1}:${tier2}:${tier3}`
+function getItems(tier1: Tier1Val, tier2: string, groupId: string): Item[] {
+  if (tier1 === 'sips') {
+    if (tier2 === 'cocktails') return groupId === 'vol1' ? VOL1 : groupId === 'vol2' ? VOL2 : groupId === 'vol3' ? VOL3 : []
+    if (tier2 === 'spirits') return SPIRITS[groupId]?.items ?? []
+    if (tier2 === 'wine') return WINE[groupId]?.items ?? []
+    if (tier2 === 'bubbles') return BUBBLES
+    if (tier2 === 'beer') return BEER
+  } else if (tier2 === 'cigars') {
+    return CIGARS
+  }
+  return []
+}
+
+function ContentPanel({ tier1, tier2 }: { tier1: Tier1Val; tier2: string }) {
+  const groups = getGroups(tier1, tier2)
+  const isHookah = tier1 === 'exhales' && tier2 === 'hookah'
 
   return (
     <AnimatePresence mode="wait">
       <motion.div
-        key={key}
+        key={`${tier1}:${tier2}`}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -6 }}
         transition={{ duration: 0.22, ease: 'easeOut' }}
-        className="mt-8 md:mt-10"
+        className="mt-8 md:mt-10 space-y-12 md:space-y-14"
       >
-        {description && (
-          <p className="font-sans text-sm md:text-base text-white/55 leading-relaxed text-center max-w-sm mx-auto mb-8">
-            {description}
-          </p>
+        {groups.map((group) => (
+          <ContentGroup key={group.id} tier1={tier1} tier2={tier2} group={group} isHookah={isHookah} />
+        ))}
+      </motion.div>
+    </AnimatePresence>
+  )
+}
+
+function ContentGroup({
+  tier1,
+  tier2,
+  group,
+  isHookah,
+}: {
+  tier1: Tier1Val
+  tier2: string
+  group: Group
+  isHookah: boolean
+}) {
+  const items = isHookah ? [] : getItems(tier1, tier2, group.id)
+  const tier3 = group.id
+
+  return (
+    // scroll-mt so the jump-nav pills land the section below the sticky
+    // tier1/tier2/tier3 pill rows above, not flush under them.
+    <div id={group.id} className="scroll-mt-28">
+      {group.description && (
+        <p className="font-sans text-sm md:text-base text-white/55 leading-relaxed text-center max-w-sm mx-auto mb-8">
+          {group.description}
+        </p>
+      )}
+      <div className="flex items-baseline justify-between mb-5 pb-4 border-b border-white/[0.06]">
+        <h3 className="font-sans text-sm uppercase tracking-[0.2em] text-white/40">
+          {group.heading}
+        </h3>
+        {items.length > 0 && !isHookah && (
+          <span className="text-xs text-white/20 uppercase tracking-[0.12em]">
+            {items.length} {items.length === 1 ? 'item' : 'items'}
+          </span>
         )}
-        <div className="flex items-baseline justify-between mb-5 pb-4 border-b border-white/[0.06]">
-          <h3 className="font-sans text-sm uppercase tracking-[0.2em] text-white/40">
-            {heading}
-          </h3>
-          {items.length > 0 && tier2 !== 'hookah' && (
-            <span className="text-xs text-white/20 uppercase tracking-[0.12em]">
-              {items.length} {items.length === 1 ? 'item' : 'items'}
-            </span>
-          )}
-        </div>
-        
-        {/* ── Hookah: Session & Upgrades ── bespoke grouped layout */}
-        {tier2 === 'hookah' && tier3 === 'base' ? (
+      </div>
+
+      {/* ── Hookah: Session & Upgrades ── bespoke grouped layout */}
+      {isHookah && tier3 === 'base' ? (
           <div className="space-y-8">
             {/* Sessions */}
             <div>
@@ -700,7 +738,7 @@ function ContentPanel({ tier1, tier2, tier3 }: { tier1: Tier1Val; tier2: string;
           </div>
 
         /* ── Hookah: Signature Bowls ── card grid */
-        ) : tier2 === 'hookah' && tier3 === 'bowls' ? (
+        ) : isHookah && tier3 === 'bowls' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {HOOKAH_BOWLS.map((bowl, i) => (
               <motion.div
@@ -726,7 +764,7 @@ function ContentPanel({ tier1, tier2, tier3 }: { tier1: Tier1Val; tier2: string;
           </div>
 
         /* ── Hookah: Flavor Library ── accordion by brand */
-        ) : tier2 === 'hookah' && tier3 === 'flavors' ? (
+        ) : isHookah && tier3 === 'flavors' ? (
           <div className="space-y-3">
             {Object.entries(HOOKAH_FLAVORS).map(([key, brand], brandIdx) => (
               <motion.div
@@ -760,12 +798,11 @@ function ContentPanel({ tier1, tier2, tier3 }: { tier1: Tier1Val; tier2: string;
             ))}
           </div>
         )}
-        
-        {note && (
-          <p className="mt-7 text-xs text-white/25 text-center leading-relaxed">{note}</p>
+
+        {group.note && (
+          <p className="mt-7 text-xs text-white/25 text-center leading-relaxed">{group.note}</p>
         )}
-      </motion.div>
-    </AnimatePresence>
+      </div>
   )
 }
 
@@ -783,34 +820,38 @@ export function FullMenuMatrix() {
 
   const [tier1, setTier1] = useState<Tier1Val | null>(initT1)
   const [tier2, setTier2] = useState<string | null>(initT2)
-  const [tier3, setTier3] = useState<string | null>(initT3)
 
   // Determine which tier is the "active focus" — i.e. what the user
   // needs to select next. This drives which tier renders below.
   const needsTier3 =
     tier2 === 'cocktails' || tier2 === 'spirits' || tier2 === 'wine' || tier2 === 'hookah'
 
+  // A deep link with t3 (e.g. from an old link that still carries it)
+  // scrolls straight to that sub-group's section once it's rendered,
+  // instead of gating content behind an extra click.
+  useEffect(() => {
+    if (!initT3) return
+    const el = document.getElementById(initT3)
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [initT3])
+
+  function scrollToGroup(id: string) {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   // Breadcrumb trail
   const crumbs: { label: string; onClick: () => void }[] = []
-  if (tier1) crumbs.push({ label: tier1 === 'sips' ? 'Sips' : 'Exhales', onClick: () => { setTier1(null); setTier2(null); setTier3(null) } })
+  if (tier1) crumbs.push({ label: tier1 === 'sips' ? 'Sips' : 'Exhales', onClick: () => { setTier1(null); setTier2(null) } })
   if (tier2) {
     const t2label = [...SIPS_TIER2, ...EXHALES_TIER2].find(x => x.id === tier2)?.label ?? tier2
-    crumbs.push({ label: t2label, onClick: () => { setTier2(null); setTier3(null) } })
-  }
-  if (tier3 && needsTier3) {
-    const t3label =
-      tier2 === 'cocktails' ? (COCKTAIL_VOLS.find(x => x.id === tier3)?.label ?? tier3) :
-      tier2 === 'spirits'   ? (SPIRIT_CATS.find(x => x.id === tier3)?.label ?? tier3) :
-      tier2 === 'wine'      ? (WINE_CATS.find(x => x.id === tier3)?.label ?? tier3) :
-      tier2 === 'hookah'    ? (HOOKAH_TIER3.find(x => x.id === tier3)?.label ?? tier3) : tier3
-    crumbs.push({ label: t3label, onClick: () => setTier3(null) })
+    crumbs.push({ label: t2label, onClick: () => setTier2(null) })
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 py-10 md:py-14">
+    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-10 md:py-14">
 
       {/* Breadcrumb */}
-      <Breadcrumb items={crumbs} onSelect={() => {}} />
+      <Breadcrumb items={crumbs} />
 
       {/* ── Tier 1: Sips | Exhales ── */}
       <AnimatePresence mode="wait">
@@ -824,9 +865,9 @@ export function FullMenuMatrix() {
         >
           {(['sips', 'exhales'] as const).map((v) => (
             <Pill key={v} active={tier1 === v} size="lg" onClick={() => {
+              if (tier1 === v) return
               setTier1(v)
               setTier2(null)
-              setTier3(null)
             }}>
               {v === 'sips'
                 ? <><Wine className="w-4 h-4" /> Sips</>
@@ -858,8 +899,8 @@ export function FullMenuMatrix() {
                     active={tier2 === opt.id}
                     size="md"
                     onClick={() => {
+                      if (tier2 === opt.id) return
                       setTier2(opt.id)
-                      setTier3(null)
                     }}
                   >
                     {opt.label}
@@ -871,7 +912,8 @@ export function FullMenuMatrix() {
         )}
       </AnimatePresence>
 
-      {/* ── Tier 3: deep filter ── only for cocktails / spirits / wine */}
+      {/* ── Tier 3: jump-nav — sub-groups all render below already, these
+          just scroll to one. Not a selection gate anymore. */}
       <AnimatePresence>
         {tier1 && tier2 && needsTier3 && (
           <motion.div
@@ -886,7 +928,7 @@ export function FullMenuMatrix() {
               <div className="mb-4 h-px bg-gradient-to-r from-transparent via-white/[0.05] to-transparent" />
               <div className="flex flex-wrap gap-2 md:gap-2.5 justify-center">
                 {tier2 === 'cocktails' && COCKTAIL_VOLS.map((p) => (
-                  <Pill key={p.id} active={tier3 === p.id} size="sm" onClick={() => setTier3(p.id)}>
+                  <Pill key={p.id} active={false} size="sm" onClick={() => scrollToGroup(p.id)}>
                     {p.label} {p.sub && <span className="text-[10px] opacity-70">— {p.sub}</span>}
                   </Pill>
                 ))}
@@ -895,7 +937,7 @@ export function FullMenuMatrix() {
                     {/* Row 1: Vodka · Tequila · Gin · Rum */}
                     <div className="flex flex-wrap justify-center gap-2 md:gap-2.5">
                       {SPIRIT_CATS.slice(0, 4).map((c) => (
-                        <Pill key={c.id} active={tier3 === c.id} size="sm" onClick={() => setTier3(c.id)}>
+                        <Pill key={c.id} active={false} size="sm" onClick={() => scrollToGroup(c.id)}>
                           {c.label}
                         </Pill>
                       ))}
@@ -903,7 +945,7 @@ export function FullMenuMatrix() {
                     {/* Row 2: Whiskey & Bourbon · Cognac & Scotch · Liqueurs — always on the same line */}
                     <div className="flex flex-wrap justify-center gap-2 md:gap-2.5">
                       {SPIRIT_CATS.slice(4).map((c) => (
-                        <Pill key={c.id} active={tier3 === c.id} size="sm" onClick={() => setTier3(c.id)}>
+                        <Pill key={c.id} active={false} size="sm" onClick={() => scrollToGroup(c.id)}>
                           {c.label}
                         </Pill>
                       ))}
@@ -911,12 +953,12 @@ export function FullMenuMatrix() {
                   </div>
                 )}
                 {tier2 === 'wine' && WINE_CATS.map((c) => (
-                  <Pill key={c.id} active={tier3 === c.id} size="sm" onClick={() => setTier3(c.id)}>
+                  <Pill key={c.id} active={false} size="sm" onClick={() => scrollToGroup(c.id)}>
                     {c.label}
                   </Pill>
                 ))}
                 {tier2 === 'hookah' && HOOKAH_TIER3.map((c) => (
-                  <Pill key={c.id} active={tier3 === c.id} size="sm" onClick={() => setTier3(c.id)}>
+                  <Pill key={c.id} active={false} size="sm" onClick={() => scrollToGroup(c.id)}>
                     {c.label}
                   </Pill>
                 ))}
@@ -926,9 +968,9 @@ export function FullMenuMatrix() {
         )}
       </AnimatePresence>
 
-      {/* ── Content ── only once full selection is made */}
+      {/* ── Content ── once tier1+tier2 are chosen, every sub-group shows */}
       <AnimatePresence>
-        {tier1 && tier2 && (!needsTier3 || tier3) && (
+        {tier1 && tier2 && (
           <motion.div
             key="content"
             initial={{ opacity: 0 }}
@@ -939,7 +981,6 @@ export function FullMenuMatrix() {
             <ContentPanel
               tier1={tier1}
               tier2={tier2}
-              tier3={tier3 ?? ''}
             />
           </motion.div>
         )}
